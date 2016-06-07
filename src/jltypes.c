@@ -3734,24 +3734,30 @@ void jl_init_types(void)
 
     jl_typemap_entry_type =
         jl_new_datatype(jl_symbol("TypeMapEntry"), jl_any_type, jl_emptysvec,
-                        jl_svec(9, jl_symbol("next"),
-                                   jl_symbol("sig"),
-                                   jl_symbol("tvars"),
-                                   jl_symbol("simplesig"),
-                                   jl_symbol("guardsigs"),
-                                   jl_symbol("func"),
-                                   jl_symbol("isleafsig"),
-                                   jl_symbol("issimplesig"),
-                                   jl_symbol("va")),
-                        jl_svec(9, jl_any_type, // Union{TypeMapEntry, Void}
-                                   jl_type_type, // TupleType
-                                   jl_any_type, // Union{SimpleVector{TypeVar}, TypeVar}
-                                   jl_any_type, // TupleType
-                                   jl_any_type, // SimpleVector{TupleType}
-                                   jl_any_type, // Any
-                                   jl_bool_type,
-                                   jl_bool_type,
-                                   jl_bool_type),
+                        jl_svec(11,
+                            jl_symbol("next"),
+                            jl_symbol("sig"),
+                            jl_symbol("tvars"),
+                            jl_symbol("simplesig"),
+                            jl_symbol("guardsigs"),
+                            jl_symbol("min-age"),
+                            jl_symbol("max-age"),
+                            jl_symbol("func"),
+                            jl_symbol("isleafsig"),
+                            jl_symbol("issimplesig"),
+                            jl_symbol("va")),
+                        jl_svec(11,
+                            jl_any_type, // Union{TypeMapEntry, Void}
+                            jl_type_type, // TupleType
+                            jl_any_type, // Union{SimpleVector{TypeVar}, TypeVar}
+                            jl_any_type, // TupleType
+                            jl_any_type, // SimpleVector{TupleType}
+                            jl_long_type, // Int
+                            jl_long_type, // Int
+                            jl_any_type, // Any
+                            jl_bool_type,
+                            jl_bool_type,
+                            jl_bool_type),
                         0, 1, 5);
 
     jl_function_type = jl_new_abstracttype((jl_value_t*)jl_symbol("Function"), jl_any_type, jl_emptysvec);
