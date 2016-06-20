@@ -170,11 +170,11 @@ STATIC_INLINE void *jl_gc_alloc_buf(jl_ptls_t ptls, size_t sz)
     return jl_gc_alloc(ptls, sz, (void*)jl_buff_tag);
 }
 
-jl_lambda_info_t *jl_type_infer(jl_lambda_info_t *li, int force);
+jl_lambda_info_t *jl_type_infer(jl_lambda_info_t *li, size_t world, int force);
 void jl_generate_fptr(jl_lambda_info_t *li);
-void jl_compile_linfo(jl_lambda_info_t *li);
+void jl_compile_linfo(jl_lambda_info_t *li, size_t world);
 JL_DLLEXPORT int jl_compile_hint(jl_tupletype_t *types);
-jl_lambda_info_t *jl_compile_for_dispatch(jl_lambda_info_t *li);
+jl_lambda_info_t *jl_compile_for_dispatch(jl_lambda_info_t *li, size_t world);
 JL_DLLEXPORT void jl_set_lambda_code_null(jl_lambda_info_t *li);
 
 // invoke (compiling if necessary) the jlcall function pointer for a method
@@ -182,7 +182,7 @@ STATIC_INLINE jl_value_t *jl_call_method_internal(jl_lambda_info_t *meth, jl_val
 {
     jl_lambda_info_t *mfptr = meth;
     if (__unlikely(mfptr->fptr == NULL && mfptr->jlcall_api != 2)) {
-        mfptr = jl_compile_for_dispatch(mfptr);
+        mfptr = jl_compile_for_dispatch(mfptr, jl_get_ptls_states()->world_age);
         if (!mfptr->fptr)
             jl_generate_fptr(mfptr);
     }
@@ -309,9 +309,7 @@ jl_value_t *jl_interpret_toplevel_expr(jl_value_t *e);
 int jl_is_toplevel_only_expr(jl_value_t *e);
 jl_value_t *jl_call_scm_on_ast(const char *funcname, jl_value_t *expr);
 
-jl_lambda_info_t *jl_method_lookup_by_type(jl_methtable_t *mt, jl_tupletype_t *types,
-                                           int cache, int inexact);
-jl_lambda_info_t *jl_method_lookup(jl_methtable_t *mt, jl_value_t **args, size_t nargs, int cache);
+jl_lambda_info_t *jl_method_lookup(jl_methtable_t *mt, jl_value_t **args, size_t nargs, int cache, size_t world);
 jl_value_t *jl_gf_invoke(jl_tupletype_t *types, jl_value_t **args, size_t nargs);
 
 jl_datatype_t *jl_first_argument_datatype(jl_value_t *argtypes);
@@ -424,7 +422,7 @@ int32_t jl_assign_functionID(/*llvm::Function*/void *function);
 JL_DLLEXPORT jl_array_t *jl_idtable_rehash(jl_array_t *a, size_t newsz);
 
 JL_DLLEXPORT jl_methtable_t *jl_new_method_table(jl_sym_t *name, jl_module_t *module);
-jl_lambda_info_t *jl_get_specialization1(jl_tupletype_t *types);
+jl_lambda_info_t *jl_get_specialization1(jl_tupletype_t *types, size_t world);
 JL_DLLEXPORT int jl_has_call_ambiguities(jl_tupletype_t *types, jl_method_t *m);
 
 uint32_t jl_module_next_counter(jl_module_t *m);
@@ -710,18 +708,18 @@ jl_typemap_entry_t *jl_typemap_insert(union jl_typemap_t *cache, jl_value_t *par
                                       jl_value_t **overwritten);
 
 jl_typemap_entry_t *jl_typemap_assoc_by_type(union jl_typemap_t ml_or_cache, jl_tupletype_t *types, jl_svec_t **penv,
-        int8_t subtype_inexact__sigseq_useenv, int8_t subtype, int8_t offs);
+        int8_t subtype_inexact__sigseq_useenv, int8_t subtype, int8_t offs, size_t world);
 static jl_typemap_entry_t *const INEXACT_ENTRY = (jl_typemap_entry_t*)(uintptr_t)-1;
-jl_typemap_entry_t *jl_typemap_level_assoc_exact(jl_typemap_level_t *cache, jl_value_t **args, size_t n, int8_t offs);
-jl_typemap_entry_t *jl_typemap_entry_assoc_exact(jl_typemap_entry_t *mn, jl_value_t **args, size_t n);
-STATIC_INLINE jl_typemap_entry_t *jl_typemap_assoc_exact(union jl_typemap_t ml_or_cache, jl_value_t **args, size_t n, int8_t offs)
+jl_typemap_entry_t *jl_typemap_level_assoc_exact(jl_typemap_level_t *cache, jl_value_t **args, size_t n, int8_t offs, size_t world);
+jl_typemap_entry_t *jl_typemap_entry_assoc_exact(jl_typemap_entry_t *mn, jl_value_t **args, size_t n, size_t world);
+STATIC_INLINE jl_typemap_entry_t *jl_typemap_assoc_exact(union jl_typemap_t ml_or_cache, jl_value_t **args, size_t n, int8_t offs, size_t world)
 {
     // NOTE: This function is a huge performance hot spot!!
     if (jl_typeof(ml_or_cache.unknown) == (jl_value_t*)jl_typemap_entry_type) {
-        return jl_typemap_entry_assoc_exact(ml_or_cache.leaf, args, n);
+        return jl_typemap_entry_assoc_exact(ml_or_cache.leaf, args, n, world);
     }
     else if (jl_typeof(ml_or_cache.unknown) == (jl_value_t*)jl_typemap_level_type) {
-        return jl_typemap_level_assoc_exact(ml_or_cache.node, args, n, offs);
+        return jl_typemap_level_assoc_exact(ml_or_cache.node, args, n, offs, world);
     }
     return NULL;
 }

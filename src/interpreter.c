@@ -28,7 +28,11 @@ int jl_is_toplevel_only_expr(jl_value_t *e);
 
 jl_value_t *jl_interpret_toplevel_expr(jl_value_t *e)
 {
-    return eval(e, NULL);
+    size_t last_age = jl_get_ptls_states()->world_age;
+    jl_get_ptls_states()->world_age = jl_world_counter;
+    jl_value_t *ret = eval(e, NULL);
+    jl_get_ptls_states()->world_age = last_age;
+    return ret;
 }
 
 JL_DLLEXPORT jl_value_t *jl_interpret_toplevel_expr_in(jl_module_t *m, jl_value_t *e,
@@ -450,7 +454,10 @@ static jl_value_t *eval(jl_value_t *e, interpreter_state *s)
 
 jl_value_t *jl_toplevel_eval_body(jl_array_t *stmts)
 {
-    return eval_body(stmts, NULL, 0, 1);
+    size_t last_age = jl_get_ptls_states()->world_age;
+    jl_value_t *ret = eval_body(stmts, NULL, 0, 1);
+    jl_get_ptls_states()->world_age = last_age;
+    return ret;
 }
 
 static jl_value_t *eval_body(jl_array_t *stmts, interpreter_state *s, int start, int toplevel)
@@ -462,15 +469,17 @@ static jl_value_t *eval_body(jl_array_t *stmts, interpreter_state *s, int start,
     while (1) {
         if (i >= ns)
             jl_error("`body` expression must terminate in `return`. Use `block` instead.");
-        jl_value_t *stmt = jl_array_ptr_ref(stmts,i);
+        if (toplevel)
+            jl_get_ptls_states()->world_age = jl_world_counter;
+        jl_value_t *stmt = jl_array_ptr_ref(stmts, i);
         if (jl_is_gotonode(stmt)) {
-            i = jl_gotonode_label(stmt)-1;
+            i = jl_gotonode_label(stmt) - 1;
             continue;
         }
         else if (jl_is_expr(stmt)) {
             jl_sym_t *head = ((jl_expr_t*)stmt)->head;
             if (head == return_sym) {
-                jl_value_t *ex = jl_exprarg(stmt,0);
+                jl_value_t *ex = jl_exprarg(stmt, 0);
                 if (toplevel && jl_is_toplevel_only_expr(ex))
                     return jl_toplevel_eval(ex);
                 else
@@ -478,7 +487,7 @@ static jl_value_t *eval_body(jl_array_t *stmts, interpreter_state *s, int start,
             }
             else if (head == assign_sym) {
                 jl_value_t *sym = jl_exprarg(stmt, 0);
-                jl_value_t *rhs = eval(jl_exprarg(stmt,1), s);
+                jl_value_t *rhs = eval(jl_exprarg(stmt, 1), s);
                 if (jl_is_ssavalue(sym)) {
                     ssize_t genid = ((jl_ssavalue_t*)sym)->id;
                     if (genid >= jl_linfo_nssavalues(s->lam) || genid < 0)
@@ -497,7 +506,7 @@ static jl_value_t *eval_body(jl_array_t *stmts, interpreter_state *s, int start,
                         sym = (jl_value_t*)jl_globalref_name(sym);
                     }
                     else {
-                        m = (s==NULL || s->lam==NULL || s->lam->def==NULL) ? ptls->current_module : s->lam->def->module;
+                        m = (s == NULL || s->lam == NULL || s->lam->def == NULL) ? ptls->current_module : s->lam->def->module;
                     }
                     assert(jl_is_symbol(sym));
                     JL_GC_PUSH1(&rhs);
@@ -507,9 +516,9 @@ static jl_value_t *eval_body(jl_array_t *stmts, interpreter_state *s, int start,
                 }
             }
             else if (head == goto_ifnot_sym) {
-                jl_value_t *cond = eval(jl_exprarg(stmt,0), s);
+                jl_value_t *cond = eval(jl_exprarg(stmt, 0), s);
                 if (cond == jl_false) {
-                    i = jl_unbox_long(jl_exprarg(stmt, 1))-1;
+                    i = jl_unbox_long(jl_exprarg(stmt, 1)) - 1;
                     continue;
                 }
                 else if (cond != jl_true) {
@@ -518,20 +527,20 @@ static jl_value_t *eval_body(jl_array_t *stmts, interpreter_state *s, int start,
             }
             else if (head == line_sym) {
                 if (toplevel)
-                    jl_lineno = jl_unbox_long(jl_exprarg(stmt,0));
+                    jl_lineno = jl_unbox_long(jl_exprarg(stmt, 0));
                 // TODO: interpreted function line numbers
             }
             else if (head == enter_sym) {
                 jl_enter_handler(&__eh);
                 if (!jl_setjmp(__eh.eh_ctx,1)) {
-                    return eval_body(stmts, s, i+1, toplevel);
+                    return eval_body(stmts, s, i + 1, toplevel);
                 }
                 else {
 #ifdef _OS_WINDOWS_
                     if (ptls->exception_in_transit == jl_stackovf_exception)
                         _resetstkoflw();
 #endif
-                    i = jl_unbox_long(jl_exprarg(stmt,0))-1;
+                    i = jl_unbox_long(jl_exprarg(stmt, 0)) - 1;
                     continue;
                 }
             }
@@ -552,11 +561,11 @@ static jl_value_t *eval_body(jl_array_t *stmts, interpreter_state *s, int start,
             // TODO: interpreted function line numbers
         }
         else if (jl_is_newvarnode(stmt)) {
-            jl_value_t *var = jl_fieldref(stmt,0);
+            jl_value_t *var = jl_fieldref(stmt, 0);
             assert(jl_is_slot(var));
             ssize_t n = jl_slot_number(var);
             assert(n <= jl_linfo_nslots(s->lam) && n > 0);
-            s->locals[n-1] = NULL;
+            s->locals[n - 1] = NULL;
         }
         else {
             eval(stmt, s);
@@ -574,22 +583,27 @@ jl_value_t *jl_interpret_call(jl_lambda_info_t *lam, jl_value_t **args, uint32_t
     jl_value_t **locals;
     JL_GC_PUSHARGS(locals, jl_linfo_nslots(lam) + jl_linfo_nssavalues(lam));
     interpreter_state s;
-    s.lam = lam; s.locals = locals; s.sparam_vals = sparam_vals;
+    s.lam = lam;
+    s.locals = locals;
+    s.sparam_vals = sparam_vals;
     size_t i;
-    for(i=0; i < lam->nargs; i++) {
-        if (lam->isva && i == lam->nargs-1)
-            locals[i] = jl_f_tuple(NULL, &args[i], nargs-i);
+    for (i = 0; i < lam->nargs; i++) {
+        if (lam->isva && i == lam->nargs - 1)
+            locals[i] = jl_f_tuple(NULL, &args[i], nargs - i);
         else
             locals[i] = args[i];
     }
-    jl_value_t *r = eval_body(stmts, &s, 0, lam->nargs==0);
+    jl_value_t *r = eval_body(stmts, &s, 0, lam->def == NULL);
     JL_GC_POP();
     return r;
 }
 
 jl_value_t *jl_interpret_toplevel_thunk(jl_lambda_info_t *lam)
 {
-    return jl_interpret_call(lam, NULL, 0, NULL);
+    size_t last_age = jl_get_ptls_states()->world_age;
+    jl_value_t *ret = jl_interpret_call(lam, NULL, 0, NULL);
+    jl_get_ptls_states()->world_age = last_age;
+    return ret;
 }
 
 #ifdef __cplusplus

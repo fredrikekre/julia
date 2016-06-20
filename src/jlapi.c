@@ -56,7 +56,10 @@ JL_DLLEXPORT jl_value_t *jl_eval_string(const char *str)
         jl_value_t *ast = jl_parse_input_line(str, strlen(str),
                 filename, strlen(filename));
         JL_GC_PUSH1(&ast);
+        size_t last_age = jl_get_ptls_states()->world_age;
+        jl_get_ptls_states()->world_age = jl_get_world_counter();
         r = jl_toplevel_eval(ast);
+        jl_get_ptls_states()->world_age = last_age;
         JL_GC_POP();
         jl_exception_clear();
     }
@@ -123,7 +126,10 @@ JL_DLLEXPORT jl_value_t *jl_call(jl_function_t *f, jl_value_t **args, int32_t na
         argv[0] = (jl_value_t*)f;
         for(int i=1; i<nargs+1; i++)
             argv[i] = args[i-1];
+        size_t last_age = jl_get_ptls_states()->world_age;
+        jl_get_ptls_states()->world_age = jl_get_world_counter();
         v = jl_apply(argv, nargs+1);
+        jl_get_ptls_states()->world_age = last_age;
         JL_GC_POP();
         jl_exception_clear();
     }
@@ -138,7 +144,10 @@ JL_DLLEXPORT jl_value_t *jl_call0(jl_function_t *f)
     jl_value_t *v;
     JL_TRY {
         JL_GC_PUSH1(&f);
+        size_t last_age = jl_get_ptls_states()->world_age;
+        jl_get_ptls_states()->world_age = jl_get_world_counter();
         v = jl_apply(&f, 1);
+        jl_get_ptls_states()->world_age = last_age;
         JL_GC_POP();
         jl_exception_clear();
     }
@@ -155,7 +164,10 @@ JL_DLLEXPORT jl_value_t *jl_call1(jl_function_t *f, jl_value_t *a)
         jl_value_t **argv;
         JL_GC_PUSHARGS(argv, 2);
         argv[0] = f; argv[1] = a;
+        size_t last_age = jl_get_ptls_states()->world_age;
+        jl_get_ptls_states()->world_age = jl_get_world_counter();
         v = jl_apply(argv, 2);
+        jl_get_ptls_states()->world_age = last_age;
         JL_GC_POP();
         jl_exception_clear();
     }
@@ -172,7 +184,10 @@ JL_DLLEXPORT jl_value_t *jl_call2(jl_function_t *f, jl_value_t *a, jl_value_t *b
         jl_value_t **argv;
         JL_GC_PUSHARGS(argv, 3);
         argv[0] = f; argv[1] = a; argv[2] = b;
+        size_t last_age = jl_get_ptls_states()->world_age;
+        jl_get_ptls_states()->world_age = jl_get_world_counter();
         v = jl_apply(argv, 3);
+        jl_get_ptls_states()->world_age = last_age;
         JL_GC_POP();
         jl_exception_clear();
     }
@@ -190,7 +205,10 @@ JL_DLLEXPORT jl_value_t *jl_call3(jl_function_t *f, jl_value_t *a,
         jl_value_t **argv;
         JL_GC_PUSHARGS(argv, 4);
         argv[0] = f; argv[1] = a; argv[2] = b; argv[3] = c;
+        size_t last_age = jl_get_ptls_states()->world_age;
+        jl_get_ptls_states()->world_age = jl_get_world_counter();
         v = jl_apply(argv, 4);
+        jl_get_ptls_states()->world_age = last_age;
         JL_GC_POP();
         jl_exception_clear();
     }

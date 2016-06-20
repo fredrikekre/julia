@@ -265,6 +265,7 @@ static void NOINLINE JL_NORETURN start_task(void)
             jl_gc_wb(t, res);
         }
     }
+    jl_get_ptls_states()->world_age = jl_world_counter; // TODO
     finish_task(t, res);
     gc_debug_critical_error();
     abort();

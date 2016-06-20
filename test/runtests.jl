@@ -77,7 +77,7 @@ cd(dirname(@__FILE__)) do
 
     for t in node1_tests
         n > 1 && print("\tFrom worker 1:\t")
-        runtests(t)
+        eval(Expr(:call, () -> runtests(t))) # runtests is defined by the include above
     end
 
     println("    \033[32;1mSUCCESS\033[0m")

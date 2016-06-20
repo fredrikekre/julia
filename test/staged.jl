@@ -154,7 +154,7 @@ end
 
 # @generated functions including inner functions
 @generated function _g_f_with_inner(x)
-    :(y->y)
+    return y -> y
 end
 @test (_g_f_with_inner(1))(8) == 8
 

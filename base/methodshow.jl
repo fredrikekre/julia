@@ -54,9 +54,9 @@ function arg_decl_parts(m::Method)
     return tv, decls, file, line
 end
 
-function kwarg_decl(sig::ANY, kwtype::DataType)
-    sig = Tuple{kwtype, Core.AnyVector, sig.parameters...}
-    kwli = ccall(:jl_methtable_lookup, Any, (Any, Any), kwtype.name.mt, sig)
+function kwarg_decl(m::Method, kwtype::DataType)
+    sig = Tuple{kwtype, Core.AnyVector, m.sig.parameters...}
+    kwli = ccall(:jl_methtable_lookup, Any, (Any, Any, UInt), kwtype.name.mt, sig, getfield(m, Symbol("max-age")) % UInt)
     if kwli !== nothing
         kwli = kwli::Method
         kws = filter(x->!('#' in string(x)), kwli.lambda_template.slotnames[kwli.lambda_template.nargs+1:end])
@@ -99,7 +99,7 @@ function show(io::IO, m::Method; kwtype::Nullable{DataType}=Nullable{DataType}()
     join(io, [isempty(d[2]) ? d[1] : d[1]*"::"*d[2] for d in decls[2:end]],
                  ", ", ", ")
     if !isnull(kwtype)
-        kwargs = kwarg_decl(m.sig, get(kwtype))
+        kwargs = kwarg_decl(m, get(kwtype))
         if !isempty(kwargs)
             print(io, "; ")
             join(io, kwargs, ", ", ", ")
@@ -222,7 +222,7 @@ function show(io::IO, ::MIME"text/html", m::Method; kwtype::Nullable{DataType}=N
     join(io, [isempty(d[2]) ? d[1] : d[1]*"::<b>"*d[2]*"</b>"
                       for d in decls[2:end]], ", ", ", ")
     if !isnull(kwtype)
-        kwargs = kwarg_decl(m.sig, get(kwtype))
+        kwargs = kwarg_decl(m, get(kwtype))
         if !isempty(kwargs)
             print(io, "; <i>")
             join(io, kwargs, ", ", ", ")

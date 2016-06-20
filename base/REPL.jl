@@ -153,9 +153,9 @@ function print_response(errio::IO, val::ANY, bt, show_value::Bool, have_color::B
                 if val !== nothing && show_value
                     try
                         if specialdisplay === nothing
-                            display(val)
+                            eval(Main, Expr(:call, () -> display(val)))
                         else
-                            display(specialdisplay,val)
+                            eval(Main, Expr(:call, () -> display(specialdisplay, val)))
                         end
                     catch err
                         println(errio, "Error showing value of type ", typeof(val), ":")

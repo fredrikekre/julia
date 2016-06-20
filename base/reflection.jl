@@ -345,6 +345,7 @@ function _dump_function(f::ANY, t::ANY, native::Bool, wrapper::Bool, strip_ir_me
         throw(ArgumentError("argument is not a generic function"))
     end
     # get the LambdaInfo for the method match
+    world = ccall(:jl_get_world_counter, UInt, ())
     meth = which(f, t)
     t = to_tuple_type(t)
     ft = isa(f, Type) ? Type{f} : typeof(f)
@@ -355,14 +356,14 @@ function _dump_function(f::ANY, t::ANY, native::Bool, wrapper::Bool, strip_ir_me
     # try to infer it
     (linfo, ty, inf) = Core.Inference.typeinf(li, ti, env, true)
     # get the code for it
-    return _dump_function(linfo, native, wrapper, strip_ir_metadata, dump_module)
+    return _dump_function_linfo(linfo, world, native, wrapper, strip_ir_metadata, dump_module)
 end
 
-function _dump_function(linfo::LambdaInfo, native::Bool, wrapper::Bool, strip_ir_metadata::Bool, dump_module::Bool)
+function _dump_function_linfo(linfo::LambdaInfo, world::UInt, native::Bool, wrapper::Bool, strip_ir_metadata::Bool, dump_module::Bool)
     if native
-        llvmf = ccall(:jl_get_llvmf_decl, Ptr{Void}, (Any, Bool), linfo, wrapper)
+        llvmf = ccall(:jl_get_llvmf_decl, Ptr{Void}, (Any, UInt, Bool), linfo, world, wrapper)
     else
-        llvmf = ccall(:jl_get_llvmf_defn, Ptr{Void}, (Any, Bool), linfo, wrapper)
+        llvmf = ccall(:jl_get_llvmf_defn, Ptr{Void}, (Any, UInt, Bool), linfo, world, wrapper)
     end
     if llvmf == C_NULL
         error("could not compile the specified method")
@@ -469,7 +470,7 @@ function which(f::ANY, t::ANY)
     else
         ft = isa(f,Type) ? Type{f} : typeof(f)
         tt = Tuple{ft, t.parameters...}
-        m = ccall(:jl_gf_invoke_lookup, Any, (Any,), tt)
+        m = ccall(:jl_gf_invoke_lookup, Any, (Any, UInt), tt, typemax(UInt))
         if m === nothing
             error("no method found for the specified argument types")
         end
@@ -548,7 +549,8 @@ end
 function method_exists(f::ANY, t::ANY)
     t = to_tuple_type(t)
     t = Tuple{isa(f,Type) ? Type{f} : typeof(f), t.parameters...}
-    return ccall(:jl_method_exists, Cint, (Any, Any), typeof(f).name.mt, t) != 0
+    return ccall(:jl_method_exists, Cint, (Any, Any, UInt), typeof(f).name.mt, t,
+        ccall(:jl_get_world_counter, UInt, ())) != 0
 end
 
 function isambiguous(m1::Method, m2::Method)

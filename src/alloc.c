@@ -449,7 +449,7 @@ STATIC_INLINE jl_value_t *jl_call_staged(jl_svec_t *sparam_vals, jl_lambda_info_
                                          jl_value_t **args, uint32_t nargs)
 {
     if (__unlikely(meth->fptr == NULL)) {
-        jl_compile_linfo(meth);
+        jl_compile_linfo(meth, meth->def->min_world);
         jl_generate_fptr(meth);
     }
     assert(jl_svec_len(meth->sparam_syms) == jl_svec_len(sparam_vals));
@@ -491,6 +491,7 @@ static jl_lambda_info_t *jl_instantiate_staged(jl_method_t *generator, jl_tuplet
         // invoke code generator
         assert(jl_nparams(tt) == jl_array_len(argnames) ||
                (func->isva && (jl_nparams(tt) >= jl_array_len(argnames) - 1)));
+        // TODO: set world to that of the generator while calling func
         jl_array_ptr_set(body->args, 1,
                 jl_call_staged(sparam_vals, func, jl_svec_data(tt->parameters), jl_nparams(tt)));
 
@@ -616,6 +617,8 @@ JL_DLLEXPORT jl_method_t *jl_new_method_uninit(void)
     m->isstaged = 0;
     m->needs_sparam_vals_ducttape = 2;
     m->traced = 0;
+    m->min_world = 1;
+    m->max_world = ~(size_t)0;
     JL_MUTEX_INIT(&m->writelock);
     return m;
 }
@@ -642,6 +645,7 @@ jl_method_t *jl_new_method(jl_lambda_info_t *definition, jl_sym_t *name, jl_tupl
     jl_gc_wb(m, definition);
     definition->def = m;
     jl_gc_wb(definition, m);
+    m->min_world = ++jl_world_counter;
 
     if (reused) {
         m->file = oldm->file;

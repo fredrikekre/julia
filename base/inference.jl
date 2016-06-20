@@ -49,6 +49,7 @@ type InferenceState
 
     # info on the state of inference and the linfo
     linfo::LambdaInfo
+    world::UInt
     nargs::Int
     stmt_types::Vector{Any}
     # return type
@@ -77,7 +78,7 @@ type InferenceState
     needtree::Bool
     inferred::Bool
 
-    function InferenceState(linfo::LambdaInfo, optimize::Bool, inlining::Bool, needtree::Bool)
+    function InferenceState(linfo::LambdaInfo, world::UInt, optimize::Bool, inlining::Bool, needtree::Bool)
         @assert isa(linfo.code,Array{Any,1})
         nslots = length(linfo.slotnames)
         nl = label_counter(linfo.code)+1
@@ -157,7 +158,7 @@ type InferenceState
         inmodule = isdefined(linfo, :def) ? linfo.def.module : current_module() # toplevel thunks are inferred in the current module
         frame = new(
             sp, nl, inmodule, 0,
-            linfo, la, s, Union{}, W, n,
+            linfo, world, la, s, Union{}, W, n,
             cur_hand, handler_at, n_handlers,
             ssavalue_uses, ssavalue_init,
             ObjectIdDict(), #Dict{InferenceState, Vector{LineNum}}(),
@@ -628,14 +629,14 @@ function invoke_tfunc(f::ANY, types::ANY, argtype::ANY, sv::InferenceState)
     ft = type_typeof(f)
     types = Tuple{ft, types.parameters...}
     argtype = Tuple{ft, argtype.parameters...}
-    entry = ccall(:jl_gf_invoke_lookup, Any, (Any,), types)
+    entry = ccall(:jl_gf_invoke_lookup, Any, (Any, UInt), types, sv.world)
     if is(entry, nothing)
         return Any
     end
     meth = entry.func
     (ti, env) = ccall(:jl_match_method, Any, (Any, Any, Any),
                       argtype, meth.sig, meth.tvars)::SimpleVector
-    return typeinf_edge(meth::Method, ti, env, sv)[2]
+    return typeinf_edge(meth::Method, ti, env, sv, sv.world)[2]
 end
 
 function tuple_tfunc(argtype::ANY)
@@ -863,7 +864,7 @@ function abstract_call_gf_by_type(f::ANY, argtype::ANY, sv)
             end
         end
         #print(m,"\n")
-        (_tree, rt) = typeinf_edge(method, sig, m[2], sv)
+        (_tree, rt) = typeinf_edge(method, sig, m[2], sv, sv.world)
         rettype = tmerge(rettype, rt)
         if is(rettype,Any)
             break
@@ -1415,9 +1416,9 @@ function newvar!(sv::InferenceState, typ)
 end
 
 # create a specialized LambdaInfo from a method
-function specialize_method(method::Method, types::ANY, sp::SimpleVector, cached)
+function specialize_method(method::Method, types::ANY, sp::SimpleVector, cached, world)
     if cached
-        return ccall(:jl_specializations_get_linfo, Ref{LambdaInfo}, (Any, Any, Any), method, types, sp)
+        return ccall(:jl_specializations_get_linfo, Ref{LambdaInfo}, (Any, Any, Any, UInt), method, types, sp, world)
     else
         return ccall(:jl_get_specialized, Ref{LambdaInfo}, (Any, Any, Any), method, types, sp)
     end
@@ -1441,16 +1442,23 @@ end
 inlining_enabled() = (JLOptions().can_inline == 1)
 
 #### entry points for inferring a LambdaInfo given a type signature ####
-function typeinf_edge(method::Method, atypes::ANY, sparams::SimpleVector, needtree::Bool, optimize::Bool, cached::Bool, caller)
+let _min_age = Symbol("min-age"), _max_age = Symbol("max-age")
+    global min_age(m::Method) = getfield(m, _min_age) % UInt
+    global max_age(m::Method) = getfield(m, _max_age) % UInt
+end
+function typeinf_edge(method::Method, atypes::ANY, sparams::SimpleVector, needtree::Bool, optimize::Bool, cached::Bool, caller, world::UInt)
     local code = nothing
     local frame = nothing
+    if world < min_age(method) || world > max_age(method)
+        return (nothing, Union{}, false)
+    end
     if isa(caller, LambdaInfo)
         code = caller
     elseif cached
         # check cached specializations
         # for an existing result stored there
         if !is(method.specializations, nothing)
-            code = ccall(:jl_specializations_lookup, Any, (Any, Any), method, atypes)
+            code = ccall(:jl_specializations_lookup, Any, (Any, Any, UInt), method, atypes, world)
             if isa(code, Void)
                 # something completely new
             elseif isa(code, LambdaInfo)
@@ -1517,12 +1525,12 @@ function typeinf_edge(method::Method, atypes::ANY, sparams::SimpleVector, needtr
         end
         try
             # user code might throw errors – ignore them
-            linfo = specialize_method(method, atypes, sparams, cached)
+            linfo = specialize_method(method, atypes, sparams, cached, world)
         catch
             return (nothing, Any, false)
         end
     else
-        linfo = specialize_method(method, atypes, sparams, cached)
+        linfo = specialize_method(method, atypes, sparams, cached, world)
     end
 
     ccall(:jl_typeinf_begin, Void, ())
@@ -1547,7 +1555,7 @@ function typeinf_edge(method::Method, atypes::ANY, sparams::SimpleVector, needtr
     else
         # inference not started yet, make a new frame for a new lambda
         linfo.inInference = true
-        frame = InferenceState(unshare_linfo!(linfo::LambdaInfo), optimize, inlining_enabled(), needtree)
+        frame = InferenceState(unshare_linfo!(linfo::LambdaInfo), world, optimize, inlining_enabled(), needtree)
     end
     frame = frame::InferenceState
 
@@ -1572,26 +1580,27 @@ function typeinf_edge(method::Method, atypes::ANY, sparams::SimpleVector, needtr
     return (frame.linfo, widenconst(frame.bestguess), frame.inferred)
 end
 
-function typeinf_edge(method::Method, atypes::ANY, sparams::SimpleVector, caller)
-    return typeinf_edge(method, atypes, sparams, false, true, true, caller)
+world_counter() = ccall(:jl_get_world_counter, UInt, ())
+function typeinf_edge(method::Method, atypes::ANY, sparams::SimpleVector, caller::InferenceState, world::UInt)
+    return typeinf_edge(method, atypes, sparams, false, true, true, caller, world)
 end
 function typeinf(method::Method, atypes::ANY, sparams::SimpleVector, needtree::Bool=false)
-    return typeinf_edge(method, atypes, sparams, needtree, true, true, nothing)
+    return typeinf_edge(method, atypes, sparams, needtree, true, true, nothing, world_counter())
 end
 # compute an inferred (optionally optimized) AST without global effects (i.e. updating the cache)
 function typeinf_uncached(method::Method, atypes::ANY, sparams::ANY; optimize::Bool=true)
-    return typeinf_edge(method, atypes, sparams, true, optimize, false, nothing)
+    return typeinf_edge(method, atypes, sparams, true, optimize, false, nothing, world_counter())
 end
 function typeinf_uncached(method::Method, atypes::ANY, sparams::SimpleVector, optimize::Bool)
-    return typeinf_edge(method, atypes, sparams, true, optimize, false, nothing)
+    return typeinf_edge(method, atypes, sparams, true, optimize, false, nothing, world_counter())
 end
-function typeinf_ext(linfo::LambdaInfo)
+function typeinf_ext(linfo::LambdaInfo, world::UInt)
     if isdefined(linfo, :def)
         # method lambda - infer this specialization via the method cache
         if linfo.inferred && linfo.code !== nothing
             return linfo
         end
-        (code, _t, inferred) = typeinf_edge(linfo.def, linfo.specTypes, linfo.sparam_vals, true, true, true, linfo)
+        (code, _t, inferred) = typeinf_edge(linfo.def, linfo.specTypes, linfo.sparam_vals, true, true, true, linfo, world)
         if inferred && code.inferred && linfo !== code
             # This case occurs when the IR for a function has been deleted.
             # `code` will be a newly-created LambdaInfo, and we need to copy its
@@ -1617,7 +1626,7 @@ function typeinf_ext(linfo::LambdaInfo)
         # toplevel lambda - infer directly
         linfo.inInference = true
         ccall(:jl_typeinf_begin, Void, ())
-        frame = InferenceState(linfo, true, inlining_enabled(), true)
+        frame = InferenceState(linfo, world, true, inlining_enabled(), true)
         typeinf_loop(frame)
         ccall(:jl_typeinf_end, Void, ())
         @assert frame.inferred # TODO: deal with this better
@@ -2413,7 +2422,7 @@ function inlineable(f::ANY, ft::ANY, e::Expr, atypes::Vector{Any}, sv::Inference
             function splitunion(atypes::Vector{Any}, i::Int)
                 if i == 0
                     local sig = argtypes_to_type(atypes)
-                    local li = ccall(:jl_get_spec_lambda, Any, (Any,), sig)
+                    local li = ccall(:jl_get_spec_lambda, Any, (Any, Any), sig, sv.world)
                     li === nothing && return false
                     local stmt = []
                     push!(stmt, Expr(:(=), linfo_var, li))
@@ -2481,7 +2490,7 @@ function inlineable(f::ANY, ft::ANY, e::Expr, atypes::Vector{Any}, sv::Inference
                 return (ret_var, stmts)
             end
         else
-            local cache_linfo = ccall(:jl_get_spec_lambda, Any, (Any,), atype_unlimited)
+            local cache_linfo = ccall(:jl_get_spec_lambda, Any, (Any, Any), atype_unlimited, sv.world)
             cache_linfo === nothing && return NF
             e.head = :invoke
             unshift!(e.args, cache_linfo)

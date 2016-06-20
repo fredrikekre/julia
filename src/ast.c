@@ -148,11 +148,12 @@ value_t fl_invoke_julia_macro(fl_context_t *fl_ctx, value_t *args, uint32_t narg
     int i;
     for(i=1; i < nargs; i++) margs[i] = scm_to_julia(fl_ctx, args[i], 1);
     jl_value_t *result = NULL;
+    size_t world = jl_get_ptls_states()->world_age;
 
     JL_TRY {
         margs[0] = scm_to_julia(fl_ctx, args[0], 1);
         margs[0] = jl_toplevel_eval(margs[0]);
-        mfunc = jl_method_lookup(jl_gf_mtable(margs[0]), margs, nargs, 1);
+        mfunc = jl_method_lookup(jl_gf_mtable(margs[0]), margs, nargs, 1, world);
         if (mfunc == NULL) {
             JL_GC_POP();
             jl_method_error((jl_function_t*)margs[0], margs, nargs);
