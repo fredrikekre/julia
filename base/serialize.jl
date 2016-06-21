@@ -417,7 +417,7 @@ function serialize_typename(s::AbstractSerializer, t::TypeName)
     serialize(s, t.primary.ninitialized)
     if isdefined(t, :mt)
         serialize(s, t.mt.name)
-        serialize(s, t.mt.defs)
+        serialize(s, collect(Base.MethodList(t.mt)))
         serialize(s, t.mt.max_args)
         if isdefined(t.mt, :kwsorter)
             serialize(s, t.mt.kwsorter)
@@ -798,8 +798,10 @@ function deserialize_typename(s::AbstractSerializer, number)
         if makenew
             tn.mt = ccall(:jl_new_method_table, Any, (Any, Any), name, tn.module)
             tn.mt.name = mtname
-            tn.mt.defs = defs
             tn.mt.max_args = maxa
+            for def in defs
+                ccall(:jl_method_table_insert, Void, (Any, Any, Ptr{Void}), tn.mt, def, C_NULL)
+            end
         end
         tag = Int32(read(s.io, UInt8)::UInt8)
         if tag != UNDEFREF_TAG

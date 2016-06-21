@@ -1023,7 +1023,7 @@ static int invalidate_conflicting(jl_typemap_entry_t *oldentry, struct typemap_i
     return 1;
 }
 
-void jl_method_table_insert(jl_methtable_t *mt, jl_method_t *method, jl_tupletype_t *simpletype)
+JL_DLLEXPORT void jl_method_table_insert(jl_methtable_t *mt, jl_method_t *method, jl_tupletype_t *simpletype)
 {
     assert(jl_is_method(method));
     assert(jl_is_mtable(mt));
