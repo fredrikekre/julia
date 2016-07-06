@@ -1004,6 +1004,42 @@ static void update_max_args(jl_methtable_t *mt, jl_tupletype_t *type)
 }
 
 // invalidate cached methods that overlap this definition
+struct invalidate_spec_env {
+    jl_lambda_info_t *replaced;
+    size_t max_world;
+    int invalidated;
+};
+static int invalidate_spec(jl_typemap_entry_t *oldentry, void *closure)
+{
+    struct invalidate_spec_env *env = (struct invalidate_spec_env*)closure;
+    if (oldentry->func.linfo == env->replaced) {
+        if (oldentry->max_world > env->max_world) {
+            oldentry->max_world = env->max_world;
+            env->invalidated = 1;
+        }
+    }
+    return 1;
+}
+static void invalidate_conflicting_recursive(jl_lambda_info_t *oldentry, size_t max_world)
+{
+    if (oldentry->backedges) {
+        size_t i, l = jl_array_len(oldentry->backedges);
+        for (i = 0; i < l; i++) {
+            struct invalidate_spec_env env;
+            env.max_world = max_world;
+            env.invalidated = 0;
+            env.replaced = (jl_lambda_info_t*)jl_array_ptr_ref(oldentry->backedges, i);
+            jl_method_t *m = env.replaced->def;
+            jl_typemap_visitor(m->specializations, invalidate_spec, &env);
+            jl_datatype_t *gf = jl_first_argument_datatype((jl_value_t*)m->sig);
+            assert(jl_is_datatype(gf) && gf->name->mt);
+            jl_typemap_visitor(gf->name->mt->cache, invalidate_spec, &env);
+
+            if (env.invalidated)
+                invalidate_conflicting_recursive(env.replaced, max_world);
+        }
+    }
+}
 struct invalidate_conflicting_env {
     struct typemap_intersection_env match;
     jl_array_t *shadowed;
@@ -1013,10 +1049,11 @@ static int invalidate_conflicting(jl_typemap_entry_t *oldentry, struct typemap_i
 {
     struct invalidate_conflicting_env *closure = container_of(closure0, struct invalidate_conflicting_env, match);
     size_t i, n = jl_array_len(closure->shadowed);
-    jl_value_t **d = jl_array_ptr_data(closure->shadowed);
+    jl_method_t **d = (jl_method_t**)jl_array_ptr_data(closure->shadowed);
     for (i = 0; i < n; i++) {
-        if (d[i] == (jl_value_t*)oldentry->func.linfo->def) {
+        if (d[i] == oldentry->func.linfo->def) {
             oldentry->max_world = closure->max_world;
+            invalidate_conflicting_recursive(oldentry->func.linfo, closure->max_world);
             return 1;
         }
     }
@@ -1064,6 +1101,12 @@ JL_DLLEXPORT void jl_method_table_insert(jl_methtable_t *mt, jl_method_t *method
         env.match.type = (jl_value_t*)type;
         env.max_world = method->min_world - 1;
         jl_typemap_intersection_visitor(mt->cache, jl_cachearg_offset(mt), &env.match);
+
+        size_t i, n = jl_array_len(env.shadowed);
+        jl_method_t **d = (jl_method_t**)jl_array_ptr_data(env.shadowed);
+        for (i = 0; i < n; i++) {
+            jl_typemap_intersection_visitor(d[i]->specializations, 0, &env.match);
+        }
     }
     update_max_args(mt, type);
     JL_UNLOCK(&mt->writelock);
