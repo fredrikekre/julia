@@ -1070,14 +1070,22 @@ JL_DLLEXPORT void jl_method_table_insert(jl_methtable_t *mt, jl_method_t *method
     JL_GC_POP();
 }
 
-void JL_NORETURN jl_method_error_bare(jl_function_t *f, jl_value_t *args)
+void JL_NORETURN jl_method_error_bare(jl_function_t *f, jl_value_t *args, size_t world)
 {
     if (jl_methoderror_type) {
-        jl_throw(jl_new_struct(jl_methoderror_type, f, args));
+        jl_value_t *e = jl_new_struct_uninit(jl_methoderror_type);
+        struct jl_method_error {
+            jl_value_t *f;
+            jl_value_t *args;
+            size_t world;
+        } *pe = (void*)e,
+           ee = {f, args, world};
+        *pe = ee;
+        jl_throw(e);
     }
     else {
         jl_printf((JL_STREAM*)STDERR_FILENO, "A method error occurred before the base MethodError type was defined. Aborting...\n");
-        jl_static_show((JL_STREAM*)STDERR_FILENO,(jl_value_t*)f); jl_printf((JL_STREAM*)STDERR_FILENO,"\n");
+        jl_static_show((JL_STREAM*)STDERR_FILENO,(jl_value_t*)f); jl_printf((JL_STREAM*)STDERR_FILENO," world %u\n", (unsigned)world);
         jl_static_show((JL_STREAM*)STDERR_FILENO,args); jl_printf((JL_STREAM*)STDERR_FILENO,"\n");
         jl_ptls_t ptls = jl_get_ptls_states();
         ptls->bt_size = rec_backtrace(ptls->bt_data, JL_MAX_BT_SIZE);
@@ -1087,11 +1095,11 @@ void JL_NORETURN jl_method_error_bare(jl_function_t *f, jl_value_t *args)
     // not reached
 }
 
-void JL_NORETURN jl_method_error(jl_function_t *f, jl_value_t **args, size_t na)
+void JL_NORETURN jl_method_error(jl_function_t *f, jl_value_t **args, size_t na, size_t world)
 {
     jl_value_t *argtup = jl_f_tuple(NULL, args+1, na-1);
     JL_GC_PUSH1(&argtup);
-    jl_method_error_bare(f, argtup);
+    jl_method_error_bare(f, argtup, world);
     // not reached
 }
 
@@ -1891,7 +1899,7 @@ JL_DLLEXPORT jl_value_t *jl_apply_generic(jl_value_t **args, uint32_t nargs)
             if (error_en)
                 show_call(F, args, nargs);
 #endif
-            jl_method_error((jl_function_t*)args[0], args, nargs);
+            jl_method_error((jl_function_t*)args[0], args, nargs, world);
             // unreachable
         }
     }
@@ -1938,7 +1946,7 @@ jl_value_t *jl_gf_invoke(jl_tupletype_t *types0, jl_value_t **args, size_t nargs
     jl_typemap_entry_t *entry = (jl_typemap_entry_t*)jl_gf_invoke_lookup(types, world);
 
     if ((jl_value_t*)entry == jl_nothing) {
-        jl_method_error_bare(gf, (jl_value_t*)types0);
+        jl_method_error_bare(gf, (jl_value_t*)types0, world);
         // unreachable
     }
 

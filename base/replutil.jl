@@ -341,6 +341,7 @@ function showerror(io::IO, ex::MethodError)
             print(io, "you may have intended to import Base.", name)
         end
     end
+    # TODO: world counter check
     if !is_arg_types
         # Check for row vectors used where a column vector is intended.
         vec_args = []
@@ -538,6 +539,7 @@ function show_method_candidates(io::IO, ex::MethodError, kwargs::Vector=Any[])
                         end
                     end
                 end
+                # TODO: indicate if it's in the wrong world
                 push!(lines, (buf, right_matches))
             end
         end
