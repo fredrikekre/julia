@@ -417,6 +417,7 @@ JL_DLLEXPORT jl_lambda_info_t *jl_new_lambda_info_uninit(void)
     li->rettype = (jl_value_t*)jl_any_type;
     li->sparam_syms = jl_emptysvec;
     li->sparam_vals = jl_emptysvec;
+    li->backedges = NULL;
     li->fptr = NULL;
     li->jlcall_api = 0;
     li->compile_traced = 0;

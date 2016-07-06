@@ -1446,6 +1446,12 @@ let _min_age = Symbol("min-age"), _max_age = Symbol("max-age")
     global min_age(m::Method) = getfield(m, _min_age) % UInt
     global max_age(m::Method) = getfield(m, _max_age) % UInt
 end
+function add_backedge(li::LambdaInfo, caller::LambdaInfo)
+    isdefined(caller, :def) || return # don't add backedges to toplevel exprs
+    isdefined(li, :backedges) || (li.backedges = []) # lazy-init the backedges array
+    in(caller, li.backedges) || push!(li.backedges, caller) # add a backedge from callee to caller
+    nothing
+end
 function typeinf_edge(method::Method, atypes::ANY, sparams::SimpleVector, needtree::Bool, optimize::Bool, cached::Bool, caller, world::UInt)
     local code = nothing
     local frame = nothing
@@ -1464,6 +1470,7 @@ function typeinf_edge(method::Method, atypes::ANY, sparams::SimpleVector, needtr
             elseif isa(code, LambdaInfo)
                 # something existing
                 if code.inferred && !(needtree && code.code === nothing)
+                    isa(caller, InferenceState) && add_backedge(code, caller.linfo)
                     return (code, code.rettype, true)
                 end
             else
@@ -1471,6 +1478,7 @@ function typeinf_edge(method::Method, atypes::ANY, sparams::SimpleVector, needtr
                 # is not needed, we can return it.
                 typeassert(code, Type)
                 if !needtree
+                    # XXX: isa(caller, InferenceState) && add_backedge(method, atypes, caller)
                     return (nothing, code, true)
                 end
                 code = nothing
@@ -1576,6 +1584,7 @@ function typeinf_edge(method::Method, atypes::ANY, sparams::SimpleVector, needtr
         end
     end
     typeinf_loop(frame)
+    isa(caller, InferenceState) && add_backedge(linfo, caller.linfo)
     ccall(:jl_typeinf_end, Void, ())
     return (frame.linfo, widenconst(frame.bestguess), frame.inferred)
 end
@@ -2548,6 +2557,7 @@ function inlineable(f::ANY, ft::ANY, e::Expr, atypes::Vector{Any}, sv::Inference
     if linfo === nothing || !inferred || !linfo.inlineable || (ast = linfo.code) === nothing
         return invoke_NF()
     end
+    add_backedge(linfo, enclosing)
 
     na = linfo.nargs
     # check for vararg function

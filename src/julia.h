@@ -254,6 +254,7 @@ typedef struct _jl_lambda_info_t {
     jl_value_t *ssavaluetypes;  // types of ssa values
     jl_array_t *slotnames; // names of local variables
     jl_array_t *slotflags;  // local var bit flags
+    jl_array_t *backedges;  // backedges
     struct _jl_lambda_info_t *unspecialized_ducttape; // if template can't be compiled due to intrinsics, an un-inferred executable copy may get stored here
     jl_method_t *def; // method this is specialized from, (null if this is a toplevel thunk)
     jl_value_t *constval;  // value of the function if jlcall_api==2
