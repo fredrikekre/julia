@@ -108,13 +108,13 @@ temp_pkg_dir() do
 
     # test that Pkg.installed, Pkg.checkout,
     # Pkg.status, Pkg.free, and Pkg.available are case sensitive
-    @test Pkg.installed("example") === nothing
+    @test_throws PkgError Pkg.installed("example")
     @test_throws PkgError Pkg.checkout("example")
-    @test_throws PkgError Pkg.status("example")
+    @test Pkg.status("example") === nothing
     @test_throws PkgError Pkg.free("example")
     Pkg.rm("example")
-    [keys(Pkg.installed())...] == ["Example"]
-    @test isempty(Pkg.available("example"))
+    @test [keys(Pkg.installed())...] == ["Example"]
+    @test_throws PkgError Pkg.available("example")
 
     iob = IOBuffer()
     Pkg.checkout("Example")
@@ -221,8 +221,8 @@ temp_pkg_dir() do
         Pkg.add("REPL")
         error("unexpected")
     catch err
-        @test isa(err.exceptions[1].ex, PkgError)
-        @test err.exceptions[1].ex.msg == "REPL can't be installed because " *
+        @test isa(err, PkgError)
+        @test err.msg == "REPL can't be installed because " *
             "it has no versions that support $VERSION of julia. You may " *
             "need to update METADATA by running `Pkg.update()`"
     end
@@ -232,8 +232,8 @@ temp_pkg_dir() do
         Pkg.add("NonexistentPackage")
         error("unexpected")
     catch err
-        @test isa(err.exceptions[1].ex, PkgError)
-        @test err.exceptions[1].ex.msg == "unknown package NonexistentPackage"
+        @test isa(err, PkgError)
+        @test err.msg == "unknown package NonexistentPackage"
     end
     try
         Pkg.available("NonexistentPackage")
