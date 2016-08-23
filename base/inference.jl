@@ -2167,7 +2167,9 @@ end
 function occurs_more(e::ANY, pred, n)
     if isa(e,Expr)
         e = e::Expr
-        e.head === :line && return 0
+        head = e.head
+        (head === :line || head === :meta || head === :inbounds ||
+         head === :boundscheck) && return 0
         c = 0
         for a = e.args
             c += occurs_more(a, pred, n)
@@ -2723,20 +2725,12 @@ function inlineable(f::ANY, ft::ANY, e::Expr, atypes::Vector{Any}, sv::Inference
         end
     end
 
-    if !isempty(stmts)
-        if all(stmt -> (isa(stmt,Expr) && stmt.head === :line) || isa(stmt, LineNumberNode) || stmt === nothing,
-               stmts)
-            empty!(stmts)
-        else
-            local line::Int = linfo.def.line
-            if isa(stmts[1], LineNumberNode)
-                line = shift!(stmts).line
-            end
-            unshift!(stmts, Expr(:meta, :push_loc, linfo.def.file, linfo.def.name, line))
-            isa(stmts[end], LineNumberNode) && pop!(stmts)
-            push!(stmts, Expr(:meta, :pop_loc))
-        end
+    local line::Int = linfo.def.line
+    if !isempty(stmts) && isa(stmts[1], LineNumberNode)
+        line = (shift!(stmts)::LineNumberNode).line
     end
+    unshift!(stmts, Expr(:meta, :push_loc, linfo.def.file, linfo.def.name, line))
+    push!(stmts, Expr(:meta, :pop_loc))
     if !isempty(stmts) && !propagate_inbounds
         # avoid redundant inbounds annotations
         s_1, s_end = stmts[1], stmts[end]
@@ -2770,10 +2764,16 @@ inline_worthy(body::ANY, cost::Integer) = true
 
 # should the expression be part of the inline cost model
 function inline_ignore(ex::ANY)
-    isa(ex, LineNumberNode) ||
-    ex === nothing ||
-    isa(ex, Expr) && ((ex::Expr).head === :line ||
-                      (ex::Expr).head === :meta)
+    if isa(ex, LineNumberNode) || ex === nothing
+        return true
+    end
+    if isa(ex, Expr)
+        ex = ex::Expr
+        head = ex.head
+        return (head === :line || head === :meta || head === :inbounds ||
+                head === :boundscheck)
+    end
+    return false
 end
 
 function inline_worthy(body::Expr, cost::Integer=1000) # precondition: 0 < cost; nominal cost = 1000
@@ -2783,7 +2783,7 @@ function inline_worthy(body::Expr, cost::Integer=1000) # precondition: 0 < cost;
     symlim = 1000 + 5_000_000 ÷ cost
     nstmt = 0
     for stmt in body.args
-        if !inline_ignore(stmt)
+        if !(isa(stmt, SSAValue) || inline_ignore(stmt))
             nstmt += 1
         end
     end
