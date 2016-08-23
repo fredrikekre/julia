@@ -107,11 +107,12 @@ temp_pkg_dir() do
     @test [keys(Pkg.installed())...] == ["Example"]
 
     # test that Pkg.installed, Pkg.checkout,
-    # Pkg.status, Pkg.free, and Pkg.available are case sensitive
+    # Pkg.status, Pkg.free, Pkg.test, and Pkg.available are case sensitive
     @test_throws PkgError Pkg.installed("example")
     @test_throws PkgError Pkg.checkout("example")
     @test Pkg.status("example") === nothing
     @test_throws PkgError Pkg.free("example")
+    @test_throws PkgError Pkg.test("example")
     Pkg.rm("example")
     @test [keys(Pkg.installed())...] == ["Example"]
     @test_throws PkgError Pkg.available("example")
