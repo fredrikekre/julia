@@ -99,8 +99,23 @@ temp_pkg_dir() do
     Pkg.setprotocol!("")
     @test Pkg.Cache.rewrite_url_to === nothing
     Pkg.setprotocol!("https")
+
+    # test that Pkg.add is case sensitive
+    @test_throws PkgError Pkg.add("example") === nothing
+
     Pkg.add("Example")
     @test [keys(Pkg.installed())...] == ["Example"]
+
+    # test that Pkg.installed, Pkg.checkout,
+    # Pkg.status, Pkg.free, and Pkg.available are case sensitive
+    @test Pkg.installed("example") === nothing
+    @test_throws PkgError Pkg.checkout("example")
+    @test_throws PkgError Pkg.status("example")
+    @test_throws PkgError Pkg.free("example")
+    Pkg.rm("example")
+    [keys(Pkg.installed())...] == ["Example"]
+    @test isempty(Pkg.available("example"))
+
     iob = IOBuffer()
     Pkg.checkout("Example")
     Pkg.status("Example", iob)
