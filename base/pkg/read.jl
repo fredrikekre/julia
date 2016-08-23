@@ -20,9 +20,9 @@ sha1(pkg::AbstractString, ver::VersionNumber) =
 function available(names=readdir("METADATA"))
     pkgs = Dict{String,Dict{VersionNumber,Available}}()
     for pkg in names
-        isfile("METADATA", pkg, "url") || continue
+        isfile_casesensitive("METADATA", pkg, "url") || continue
         versdir = joinpath("METADATA", pkg, "versions")
-        isdir(versdir) || continue
+        isdir_casesensitive(versdir) || continue
         for ver in readdir(versdir)
             ismatch(Base.VERSION_REGEX, ver) || continue
             isfile(versdir, ver, "sha1") || continue
@@ -40,9 +40,9 @@ available(pkg::AbstractString) = get(available([pkg]),pkg,Dict{VersionNumber,Ava
 function latest(names=readdir("METADATA"))
     pkgs = Dict{String,Available}()
     for pkg in names
-        isfile("METADATA", pkg, "url") || continue
+        isfile_casesensitive("METADATA", pkg, "url") || continue
         versdir = joinpath("METADATA", pkg, "versions")
-        isdir(versdir) || continue
+        isdir_casesensitive(versdir) || continue
         pkgversions = VersionNumber[]
         for ver in readdir(versdir)
             ismatch(Base.VERSION_REGEX, ver) || continue
