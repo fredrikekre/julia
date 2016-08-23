@@ -62,6 +62,11 @@ cd(dirname(@__FILE__)) do
     # Free up memory =)
     n > 1 && rmprocs(workers(), waitfor=5.0)
     for t in node1_tests
+        # As above, try to run each test
+        # which must run on node 1. If
+        # the test fails, catch the error,
+        # and either way, append the results
+        # to the overall aggregator
         n > 1 && print("\tFrom worker 1:\t")
         local resp
         try
@@ -80,8 +85,12 @@ cd(dirname(@__FILE__)) do
             Base.Test.pop_testset()
         elseif isa(res[2][1], Tuple{Int,Int})
             fake = Base.Test.DefaultTestSet(res[1])
-            [Base.Test.record(fake, Base.Test.Pass(:test, nothing, nothing, nothing)) for i in 1:res[2][1][1]]
-            [Base.Test.record(fake, Base.Test.Broken(:test, nothing)) for i in 1:res[2][1][2]]
+            for i in 1:res[2][1][1]
+                Base.Test.record(fake, Base.Test.Pass(:test, nothing, nothing, nothing))
+            end
+            for i in 1:res[2][1][2]
+                Base.Test.record(fake, Base.Test.Broken(:test, nothing))
+            end
             Base.Test.push_testset(fake)
             Base.Test.record(o_ts, fake)
             Base.Test.pop_testset()
@@ -91,8 +100,12 @@ cd(dirname(@__FILE__)) do
             o_ts.anynonpass = true
             if isa(res[2][1].captured.ex, Base.Test.TestSetException)
                 fake = Base.Test.DefaultTestSet(res[1])
-                [Base.Test.record(fake, Base.Test.Pass(:test, nothing, nothing, nothing)) for i in 1:res[2][1].captured.ex.pass]
-                [Base.Test.record(fake, Base.Test.Broken(:test, nothing)) for i in 1:res[2][1].captured.ex.broken]
+                for i in 1:res[2][1].captured.ex.pass
+                    Base.Test.record(fake, Base.Test.Pass(:test, nothing, nothing, nothing))
+                end
+                for i in 1:res[2][1].captured.ex.broken
+                    Base.Test.record(fake, Base.Test.Broken(:test, nothing))
+                end
                 for t in res[2][1].captured.ex.errors_and_fails
                     Base.Test.record(fake, t)
                 end
