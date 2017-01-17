@@ -100,6 +100,7 @@ julia> dump(Array)
          lb: Core.BottomType Union{}
          ub: Any
        body: Array{T,N} <: DenseArray{T,N}
+```
 
 This indicates that `Array` actually names a `UnionAll` type. There is one `UnionAll` type for
 each parameter, nested. The syntax `Array{Int,2}` is equivalent to `Array{Int}{2}`;
