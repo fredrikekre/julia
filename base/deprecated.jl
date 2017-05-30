@@ -24,14 +24,21 @@ macro deprecate(old, new, ex=true)
     if isa(old, Symbol)
         oldname = Expr(:quote, old)
         newname = Expr(:quote, new)
-        Expr(:toplevel,
+        str = :(string($oldname, " is deprecated, use ", $newname, " instead."))
+        return Expr(:toplevel,
             ex ? Expr(:export, esc(old)) : nothing,
-            :(function $(esc(old))(args...)
-                  $meta
-                  depwarn(string($oldname, " is deprecated, use ", $newname, " instead."),
-                          $oldmtname)
-                  $(esc(new))(args...)
-              end),
+            quote
+                """
+                    $($(esc(old)))
+
+                $($str)
+                """
+                function $(esc(old))(args...)
+                    $meta
+                    depwarn($str, $oldmtname)
+                    $(esc(new))(args...)
+                end
+            end,
             :(const $oldmtname = Core.Typeof($(esc(old))).name.mt.name))
     elseif isa(old, Expr) && (old.head == :call || old.head == :where)
         remove_linenums!(new)
@@ -50,14 +57,21 @@ macro deprecate(old, new, ex=true)
         else
             error("invalid usage of @deprecate")
         end
-        Expr(:toplevel,
+        str = :(string($oldcall, " is deprecated, use ", $newcall, " instead."))
+        return Expr(:toplevel,
             ex ? Expr(:export, esc(oldsym)) : nothing,
-            :($(esc(old)) = begin
+            quote
+                """
+                    $($oldcall)
+
+                $($str)
+                """
+                $(esc(old)) = begin
                   $meta
-                  depwarn(string($oldcall, " is deprecated, use ", $newcall, " instead."),
-                          $oldmtname)
+                  depwarn($str,$oldmtname)
                   $(esc(new))
-              end),
+                end
+            end,
             :(const $oldmtname = Core.Typeof($(esc(oldsym))).name.mt.name))
     else
         error("invalid usage of @deprecate")
