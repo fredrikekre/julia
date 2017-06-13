@@ -59,14 +59,16 @@ end
         @test_throws ArgumentError Hermitian(Symmetric(asym, :U), :L)
 
         # similar
-        @test isa(similar(Symmetric(asym)), Symmetric{eltya})
-        @test isa(similar(Hermitian(asym)), Hermitian{eltya})
-        @test isa(similar(Symmetric(asym), Int), Symmetric{Int})
-        @test isa(similar(Hermitian(asym), Int), Hermitian{Int})
-        @test isa(similar(Symmetric(asym), (3,2)), Matrix{eltya})
-        @test isa(similar(Hermitian(asym), (3,2)), Matrix{eltya})
-        @test isa(similar(Symmetric(asym), Int, (3,2)), Matrix{Int})
-        @test isa(similar(Hermitian(asym), Int, (3,2)), Matrix{Int})
+        S = Symmetric(asym)
+        H = Hermitian(asym)
+        @test isa(similar(S), Symmetric{eltya})
+        @test isa(similar(H), Hermitian{eltya})
+        @test isa(similar(S, Int), Symmetric{Int})
+        @test isa(similar(H, Int), Hermitian{Int})
+        @test isa(similar(S, (3,2)), Matrix{eltya})
+        @test isa(similar(H, (3,2)), Matrix{eltya})
+        @test isa(similar(S, Int, (3,2)), Matrix{Int})
+        @test isa(similar(H, Int, (3,2)), Matrix{Int})
 
         # full
         @test asym == full(Hermitian(asym))
