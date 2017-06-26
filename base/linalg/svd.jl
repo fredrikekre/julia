@@ -122,6 +122,16 @@ function getindex(F::SVD, d::Symbol)
     end
 end
 
+function show(io::IO, F::SVD)
+    println(io, "$(typeof(F)) with factors:")
+    println(io, "U:")
+    show(io, F[:U])
+    println(io, "\nS:")
+    show(io, F[:S])
+    println(io, "\nV:")
+    show(io, F[:V])
+end
+
 """
     svdvals!(A)
 
@@ -288,6 +298,20 @@ function getindex(obj::GeneralizedSVD{T}, d::Symbol) where T
     else
         throw(KeyError(d))
     end
+end
+
+function show(io::IO, F::GeneralizedSVD)
+    println(io, "$(typeof(F)) with factors:")
+    println(io, "U:")
+    show(io, F[:U])
+    println(io, "\nV:")
+    show(io, F[:V])
+    println(io, "\nQ:")
+    show(io, F[:alpha])
+    println(io, "\nbeta:")
+    show(io, F[:beta])
+    println(io, "\nR:")
+    show(io, F[:R])
 end
 
 function svdvals!(A::StridedMatrix{T}, B::StridedMatrix{T}) where T<:BlasFloat

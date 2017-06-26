@@ -268,6 +268,20 @@ function getindex(F::GeneralizedSchur, d::Symbol)
     end
 end
 
+function show(io::IO, F::GeneralizedSchur)
+    println(io, "$(typeof(F)) with factors:")
+    println(io, "alpha:")
+    show(io, F[:alpha])
+    println(io, "\nbeta:")
+    show(io, F[:beta])
+    println(io, "\nT: (quasi triangle)")
+    show(io, F[:T])
+    println(io, "\nQ (left vectors):")
+    show(io, F[:Q])
+    println(io, "\nZ (right vectors):")
+    show(io, F[:Z])
+end
+
 """
     schur(A::StridedMatrix, B::StridedMatrix) -> S::StridedMatrix, T::StridedMatrix, Q::StridedMatrix, Z::StridedMatrix, α::Vector, β::Vector
 

@@ -57,8 +57,8 @@ a2img  = randn(n,n)/2
         end
         ε = εa = eps(abs(float(one(eltya))))
 
-        usv = svdfact(a)
         @testset "singular value decomposition" begin
+            usv = svdfact(a)
             @test usv[:S] === svdvals(usv)
             @test usv[:U] * (Diagonal(usv[:S]) * usv[:Vt]) ≈ a
             @test AbstractArray(usv) ≈ a
@@ -73,6 +73,19 @@ a2img  = randn(n,n)/2
                 @test svdz[:S] ≈ real(zeros(eltya,0))
                 @test svdz[:Vt] ≈ eye(eltya,0,0)
             end
+            function show(io::IO, F::SVD)
+                println(io, "$(typeof(F)) with factors:")
+                println(io, "U:")
+                show(io, F[:U])
+                println(io, "\nvalues:")
+                show(io, F[:values])
+                println(io, "\nV:")
+                show(io, F[:V])
+            end
+            Ustr = sprint(show,usv[:U])
+            Sstr = sprint(show,usv[:S])
+            Vstr = sprint(show,usv[:V])
+            @test sprint(show,usv) == "$(typeof(usv)) with factors:\nU:\n$(Ustr)\nS:\n$(Sstr)\nV:\n$(Vstr)"
         end
         @testset "Generalized svd" begin
             a_svd = a[1:n1, :]
@@ -101,6 +114,11 @@ a2img  = randn(n,n)/2
             gsvd = svdfact(b,c)
             @test gsvd[:U]*gsvd[:D1]*gsvd[:R]*gsvd[:Q]' ≈ b
             @test gsvd[:V]*gsvd[:D2]*gsvd[:R]*gsvd[:Q]' ≈ c
+
+            Ustr = sprint(show,usv[:U])
+            Sstr = sprint(show,usv[:S])
+            Vstr = sprint(show,usv[:V])
+            @test sprint(show,usv) == "$(typeof(usv)) with factors:\nU:\n$(Ustr)\nS:\n$(Sstr)\nV:\n$(Vstr)"
         end
     end
 end

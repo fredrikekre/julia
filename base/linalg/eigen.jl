@@ -27,6 +27,13 @@ function getindex(A::Union{Eigen,GeneralizedEigen}, d::Symbol)
     throw(KeyError(d))
 end
 
+function show(io::IO, F::Union{Eigen,GeneralizedEigen})
+    println(io, "$(typeof(F)) with eigenvalues:")
+    show(io, F[:values])
+    println(io, "\nand eigenvectors:")
+    show(io, F[:vectors])
+end
+
 isposdef(A::Union{Eigen,GeneralizedEigen}) = isreal(A.values) && all(x -> x > 0, A.values)
 
 """
