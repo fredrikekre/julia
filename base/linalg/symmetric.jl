@@ -281,6 +281,38 @@ end
 (-)(A::Symmetric{Tv,S}) where {Tv,S} = Symmetric{Tv,S}(-A.data, A.uplo)
 (-)(A::Hermitian{Tv,S}) where {Tv,S} = Hermitian{Tv,S}(-A.data, A.uplo)
 
+# Binary operations between Symmetric/Hermitian
+# RealHermSymComplexSym ⊕ RealHermSymComplexSym   -> Symmetric
+# RealHermSymComplexHerm ⊕ RealHermSymComplexHerm -> Hermitian
+# Hermitian{<:Complex} ⊕ Symmetric{<:Complex}     -> Array
+
+function symmetric_binary_kernel(op, A, B)
+    if A.uplo == 'U'
+        B.uplo == 'U' ? Symmetric(op(A.data, B.data), :U) :
+                        Symmetric(op(A.data, copytri!(B.data, 'L')), :U)
+    else # A.uplo == 'L'
+        B.uplo == 'L' ? Symmetric(op(A.data, B.data), :L) :
+                        Symmetric(op(A.data, copytri!(B.data, 'U')), :L)
+    end
+end
+function hermitian_binary_kernel(op, A, B)
+    if A.uplo == 'U'
+        B.uplo == 'U' ? Hermitian(op(A.data, B.data), :U) :
+                        Hermitian(op(A.data, copytri!(B.data, 'L', true)), :U)
+    else # A.uplo == 'L'
+        B.uplo == 'L' ? Hermitian(op(A.data, B.data), :L) :
+                        Hermitian(op(A.data, copytri!(B.data, 'U', true)), :L)
+    end
+end
+for op in (:+, :-)
+    @eval $op(A::RealHermSymComplexHerm, B::RealHermSymComplexHerm) = hermitian_binary_kernel($op, A, B)
+    @eval $op(A::RealHermSymComplexSym,  B::RealHermSymComplexSym)  = symmetric_binary_kernel($op, A, B)
+end
+
++(A::Symmetric, B::Symmetric) = Symmetric(broadcast(+, A, B))
++(A::Hermitian, B::Hermitian) = Hermitian(broadcast(+, A, B))
+
+
 ## Matvec
 A_mul_B!(y::StridedVector{T}, A::Symmetric{T,<:StridedMatrix}, x::StridedVector{T}) where {T<:BlasFloat} =
     BLAS.symv!(A.uplo, one(T), A.data, x, zero(T), y)
