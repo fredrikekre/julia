@@ -407,8 +407,9 @@ defining sophisticated behavior is typically quite simple.
 ## Case Study: Rational
 
 Perhaps the best way to tie all these pieces together is to present a real world example of a
-parametric composite type and its constructor methods. To that end, here is the (slightly modified) beginning of [`rational.jl`](https://github.com/JuliaLang/julia/blob/master/base/rational.jl),
-which implements Julia's [Rational Numbers](@ref):
+parametric composite type and its constructor methods. To that end, lets define a rational
+number type similar to the built in [`Rational`](@ref) type. The Julia implementation
+can be found in [`rational.jl`](https://github.com/JuliaLang/julia/blob/master/base/rational.jl).
 
 ```jldoctest rational
 julia> struct OurRational{T<:Integer} <: Real
@@ -416,7 +417,7 @@ julia> struct OurRational{T<:Integer} <: Real
            den::T
            function OurRational{T}(num::T, den::T) where T<:Integer
                if num == 0 && den == 0
-                    error("invalid rational: 0//0")
+                    throw(ArgumentError("invalid rational: 0//0"))
                end
                g = gcd(den, num)
                num = div(num, g)
@@ -434,26 +435,26 @@ OurRational
 julia> OurRational(n::Integer) = OurRational(n,one(n))
 OurRational
 
-julia> //(n::Integer, d::Integer) = OurRational(n,d)
+julia> Base.:(//)(n::Int, d::Int) = OurRational(n,d)
 // (generic function with 1 method)
 
-julia> //(x::OurRational, y::Integer) = x.num // (x.den*y)
+julia> Base.:(//)(x::OurRational, y::Int) = x.num // (x.den*y)
 // (generic function with 2 methods)
 
-julia> //(x::Integer, y::OurRational) = (x*y.den) // y.num
+julia> Base.:(//)(x::Int, y::OurRational) = (x*y.den) // y.num
 // (generic function with 3 methods)
 
-julia> //(x::Complex, y::Real) = complex(real(x)//y, imag(x)//y)
+julia> Base.:(//)(x::Complex{Int}, y::Int) = complex(real(x) // y, imag(x) // y)
 // (generic function with 4 methods)
 
-julia> //(x::Real, y::Complex) = x*y'//real(y*y')
+julia> Base.:(//)(x::Int, y::Complex{Int}) = x*y' // real(y*y')
 // (generic function with 5 methods)
 
-julia> function //(x::Complex, y::Complex)
-           xy = x*y'
-           yy = real(y*y')
-           complex(real(xy)//yy, imag(xy)//yy)
-       end
+julia> function Base.:(//)(x::Complex{Int}, y::Complex{Int})
+                  xy = x*y'
+                  yy = real(y*y')
+                  complex(real(xy) // yy, imag(xy) // yy)
+              end
 // (generic function with 6 methods)
 ```
 
@@ -491,13 +492,10 @@ Finally, applying
 number whose real and imaginary parts are rationals:
 
 ```jldoctest rational
-julia> ans = (1 + 2im)//(1 - 2im);
+julia> Z = (1 + 2im)//(1 - 2im);
 
-julia> typeof(ans)
+julia> typeof(Z)
 Complex{OurRational{Int64}}
-
-julia> ans <: Complex{OurRational}
-false
 ```
 
 Thus, although the [`//`](@ref) operator usually returns an instance of `OurRational`, if either
