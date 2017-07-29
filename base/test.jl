@@ -1315,6 +1315,10 @@ end
 GenericArray{T}(args...) where {T} = GenericArray(Array{T}(args...))
 GenericArray{T,N}(args...) where {T,N} = GenericArray(Array{T,N}(args...))
 
+function Base.convert(::Type{AbstractArray{T,N}}, a::GenericArray) where {T,N}
+    GenericArray{T,N}(convert(Array{T,N}, a.a))
+end
+
 Base.eachindex(a::GenericArray) = eachindex(a.a)
 Base.indices(a::GenericArray) = indices(a.a)
 Base.length(a::GenericArray) = length(a.a)

@@ -28,6 +28,15 @@ for elty in (Float32, Float64, Complex64, Complex128, Int)
         v = convert(Vector{elty}, v)
         B = convert(Matrix{elty}, B)
     end
+
+    @testset "constructor" begin
+        for (x, y) in ((d, dl), (GenericArray(d), GenericArray(dl)))
+            ST = SymTridiagonal(x, y)
+            @test ST::SymTridiagonal{elty, typeof(x)} == Matrix(ST)
+            @test ST.dv === x
+            @test ST.ev === y
+        end
+    end
     ε = eps(abs2(float(one(elty))))
     T = Tridiagonal(dl, d, du)
     Ts = SymTridiagonal(d, dl)
@@ -223,6 +232,26 @@ for elty in (Float32, Float64, Complex64, Complex128, Int)
     @test istriu(Tridiagonal(zeros(dl),d,du))
     @test istril(Tridiagonal(dl,d,zeros(du)))
     end
+end
+
+@testset "arbitrary AbstractVector in SymTridiagonal" begin
+    S, T = Float32, Float64
+    R = promote_type(T, S)
+    dvT = rand(T, n);   dvS = rand(S, n)
+    evT = rand(T, n-1); evS = rand(S, n-1)
+    GdvT = GenericArray(dvT); GdvS = GenericArray(dvS)
+    GevT = GenericArray(evT); GevS = GenericArray(evS)
+    @test isa(SymTridiagonal(dvT, evT), SymTridiagonal{T,Vector{T}})
+    @test isa(SymTridiagonal(dvT, evS), SymTridiagonal{R,Vector{R}})
+    @test isa(SymTridiagonal(dvS, evT), SymTridiagonal{R,Vector{R}})
+
+    @test isa(SymTridiagonal(GdvT, GevT), SymTridiagonal{T,GenericArray{T,1}})
+    @test isa(SymTridiagonal(GdvT, GevS), SymTridiagonal{R,GenericArray{R,1}})
+    @test isa(SymTridiagonal(GdvS, GevT), SymTridiagonal{R,GenericArray{R,1}})
+
+    @test isa(SymTridiagonal(GdvT, evT), SymTridiagonal{T,Vector{T}})
+    @test isa(SymTridiagonal(GdvT, evS), SymTridiagonal{R,Vector{R}})
+    @test isa(SymTridiagonal(GdvS, evT), SymTridiagonal{R,Vector{R}})
 end
 
 #Test equivalence of eigenvectors/singular vectors taking into account possible phase (sign) differences
