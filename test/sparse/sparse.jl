@@ -486,7 +486,7 @@ end
 @testset "construction of diagonal SparseMatrixCSCs" begin
     @test Array(spdiagm((ones(2), ones(2)), (0, -1), 3, 3)) ==
                            [1.0  0.0  0.0; 1.0  1.0  0.0;  0.0  1.0  0.0]
-    @test Array(spdiagm(ones(2), -1, 3, 3)) == diagm(ones(2), -1)
+    @test Array(spdiagm(ones(2), -1, 3, 3)) == diagm(ones(2) => -1)
 end
 
 @testset "issue #4986, reinterpret" begin
@@ -610,7 +610,7 @@ end
     a116 = reshape(1:(ni*nj), ni, nj)
     s116 = sparse(a116)
 
-    ad116 = diagm(diag(a116))
+    ad116 = diagm(diag(a116) => 0)
     sd116 = sparse(ad116)
 
     for (aa116, ss116) in [(a116, s116), (ad116, sd116)]
@@ -1432,7 +1432,7 @@ end
 
 @testset "spdiagm" begin
     v = sprand(10, 0.4)
-    @test spdiagm(v)::SparseMatrixCSC                == diagm(Vector(v))
+    @test spdiagm(v)::SparseMatrixCSC                == diagm(Vector(v) => 0)
     @test spdiagm(sparse(ones(5)))::SparseMatrixCSC  == speye(5)
     @test spdiagm(sparse(zeros(5)))::SparseMatrixCSC == spzeros(5,5)
 end
@@ -1787,7 +1787,7 @@ end
 @testset "sparse and dense concatenations" begin
     N = 4
     densevec = ones(N)
-    densemat = diagm(ones(N))
+    densemat = diagm(ones(N) => 0)
     spmat = spdiagm(ones(N))
     # Test that concatenations of pairs of sparse matrices yield sparse arrays
     @test issparse(vcat(spmat, spmat))

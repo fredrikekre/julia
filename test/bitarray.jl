@@ -1402,7 +1402,7 @@ timesofar("cat")
     @check_bit_operation qr(b1)
 
     b1 = bitrand(v1)
-    @check_bit_operation diagm(b1) BitMatrix
+    @check_bit_operation diagm(b1 => 0) BitMatrix
 
     b1 = bitrand(n1, n1)
     @check_bit_operation diag(b1)

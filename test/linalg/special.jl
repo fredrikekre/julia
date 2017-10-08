@@ -140,7 +140,7 @@ end
     # Test concatenating pairwise combinations of special matrices with sparse matrices,
     # dense matrices, or dense vectors
     densevec = ones(N)
-    densemat = diagm(ones(N))
+    densemat = diagm(ones(N)=>0)
     spmat = spdiagm(ones(N))
     for specialmat in specialmats
         # --> Tests applicable only to pairs of matrices

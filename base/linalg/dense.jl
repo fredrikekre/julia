@@ -246,7 +246,8 @@ diagind(A::AbstractMatrix, k::Integer=0) = diagind(size(A,1), size(A,2), k)
     diag(M, k::Integer=0)
 
 The `k`th diagonal of a matrix, as a vector.
-Use [`diagm`](@ref) to construct a diagonal matrix.
+
+See also: [`diagm`](@ref)
 
 # Examples
 ```jldoctest
@@ -265,29 +266,50 @@ julia> diag(A,1)
 diag(A::AbstractMatrix, k::Integer=0) = A[diagind(A,k)]
 
 """
-    diagm(v, k::Integer=0)
+    diagm(vk::Pair{<:AbstractVector, <:Integer}...)
 
-Construct a matrix by placing `v` on the `k`th diagonal. This constructs a full matrix; if
-you want a storage-efficient version with fast arithmetic, use [`Diagonal`](@ref) instead.
+Construct a square matrix from `Pair`s of vectors and diagonals.
+Vector `vk.first` will be placed on the `vk.second` diagonal.
+
+See also: [`spdiagm`](@ref), [`Diagonal`](@ref)
 
 # Examples
 ```jldoctest
-julia> diagm([1,2,3],1)
+julia> diagm([1,2,3] => 1)
 4×4 Array{Int64,2}:
  0  1  0  0
  0  0  2  0
  0  0  0  3
  0  0  0  0
+
+julia> diagm([1,2,3] => 1, [4,5] => -1)
+4×4 Array{Int64,2}:
+ 0  1  0  0
+ 4  0  2  0
+ 0  5  0  3
+ 0  0  0  0
 ```
 """
-function diagm(v::AbstractVector{T}, k::Integer=0) where T
-    n = length(v) + abs(k)
-    A = zeros(T,n,n)
-    A[diagind(A,k)] = v
-    A
+function diagm(vk::Pair{<:AbstractVector, <:Integer}...)
+    A = diagm_container(vk...)
+    for p in vk
+        inds = diagind(A, p.second)
+        for (i, val) in enumerate(p.first)
+            A[inds[i]] = val
+        end
+    end
+    return A
+end
+function diagm_container(vk::Pair{<:AbstractVector, <:Integer}...)
+    T = promote_type(map(x -> eltype(x.first), vk)...)
+    n = mapreduce(x -> length(x.first) + abs(x.second), max, vk)
+    return zeros(T, n, n)
+end
+function diagm_container(vk::Pair{<:BitVector, <:Integer}...)
+    n = mapreduce(x -> length(x.first) + abs(x.second), max, vk)
+    return falses(n, n)
 end
 
-diagm(x::Number) = (X = Matrix{typeof(x)}(1,1); X[1,1] = x; X)
 
 function trace(A::Matrix{T}) where T
     n = checksquare(A)
