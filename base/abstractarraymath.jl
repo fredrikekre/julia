@@ -394,10 +394,10 @@ julia> repeat([1 2; 3 4], inner=(2, 1), outer=(1, 3))
  3  4  3  4  3  4
 ```
 """
-function repeat(A::AbstractArray;
-                inner=ntuple(n->1, Val(ndims(A))),
-                outer=ntuple(n->1, Val(ndims(A))))
-    return _repeat(A, rep_kw2tup(inner), rep_kw2tup(outer))
+function repeat(A::AbstractArray{T,N};
+                inner::NTuple{NI,Int}=ntuple(n->1, Val(N)),
+                outer::NTuple{NO,Int}=ntuple(n->1, Val(N))) where {T,N,NI,NO}
+    return _repeat(A, inner, outer)
 end
 
 rep_kw2tup(n::Integer) = (n,)
@@ -428,7 +428,8 @@ _reperr(s, n, N) = throw(ArgumentError("number of " * s * " repetitions " *
 cat_fill!(R, X, inds) = (R[inds...] = X)
 cat_fill!(R, X::AbstractArray, inds) = fill!(view(R, inds...), X)
 
-@noinline function _repeat(A::AbstractArray, inner, outer)
+@noinline function _repeat(A::AbstractArray{T,N},
+                           inner::NTuple{NI,Int}, outer::NTuple{NO,Int}) where {T,N,NI,NO}
     shape, inner_shape = rep_shapes(A, inner, outer)
 
     R = similar(A, shape)
