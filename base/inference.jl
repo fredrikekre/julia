@@ -279,8 +279,8 @@ mutable struct InferenceState
         argtypes = get_argtypes(result)
         vararg_type_container = nothing
         nargs = length(argtypes)
-        s_argtypes = VarTable(uninitialized, nslots)
-        src.slottypes = Vector{Any}(uninitialized, nslots)
+        s_argtypes = VarTable(uninitialized, (nslots,))
+        src.slottypes = Vector{Any}(uninitialized, (nslots,))
         for i in 1:nslots
             at = (i > nargs) ? Bottom : argtypes[i]
             if !toplevel && linfo.def.isva && i == nargs
@@ -568,8 +568,8 @@ iskindtype(@nospecialize t) = (t === DataType || t === UnionAll || t === Union |
 
 const IInf = typemax(Int) # integer infinity
 const n_ifunc = reinterpret(Int32, arraylen) + 1
-const t_ifunc = Vector{Tuple{Int, Int, Any}}(uninitialized, n_ifunc)
-const t_ifunc_cost = Vector{Int}(uninitialized, n_ifunc)
+const t_ifunc = Vector{Tuple{Int, Int, Any}}(uninitialized, (n_ifunc,))
+const t_ifunc_cost = Vector{Int}(uninitialized, (n_ifunc,))
 const t_ffunc_key = Vector{Any}()
 const t_ffunc_val = Vector{Tuple{Int, Int, Any}}()
 const t_ffunc_cost = Vector{Int}()
@@ -4003,7 +4003,8 @@ function type_annotate!(sv::InferenceState)
     states = sv.stmt_types
     nargs = sv.nargs
     nslots = length(states[1])
-    undefs = fill(false, nslots)
+    # undefs = fill(false, nslots)
+    undefs = fill!(Vector{Bool}(uninitialized, (nslots,)), false)
     body = src.code::Array{Any,1}
     nexpr = length(body)
     i = 1
@@ -4096,7 +4097,7 @@ function widen_all_consts!(src::CodeInfo)
     end
 
     nslots = length(src.slottypes)
-    untypedload = fill(false, nslots)
+    untypedload = fill!(Vector{Bool}(uninitialized, (nslots,)), false)
     e = Expr(:body)
     e.args = src.code
     _widen_all_consts!(e, untypedload, src.slottypes)
@@ -4441,7 +4442,7 @@ function linearize_args!(args::Vector{Any}, atypes::Vector{Any}, stmts::Vector{A
     # linearize the IR by moving the arguments to SSA position
     na = length(args)
     @assert length(atypes) == na
-    newargs = Vector{Any}(uninitialized, na)
+    newargs = Vector{Any}(uninitialized, (na,))
     for i = na:-1:1
         aei = args[i]
         ti = atypes[i]
@@ -5412,7 +5413,7 @@ function inlining_pass(e::Expr, sv::OptimizationState, stmts::Vector{Any}, ins, 
     end
 
     for ninline = 1:100
-        ata = Vector{Any}(uninitialized, length(e.args))
+        ata = Vector{Any}(uninitialized, (length(e.args),))
         ata[1] = ft
         for i = 2:length(e.args)
             a = exprtype(e.args[i], sv.src, sv.mod)
@@ -5441,7 +5442,7 @@ function inlining_pass(e::Expr, sv::OptimizationState, stmts::Vector{Any}, ins, 
 
         if f === _apply
             na = length(e.args)
-            newargs = Vector{Any}(uninitialized, na-2)
+            newargs = Vector{Any}(uninitialized, (na-2,))
             newstmts = Any[]
             effect_free_upto = 0
             for i = 3:na
@@ -5556,8 +5557,10 @@ function record_used(@nospecialize(e), @nospecialize(T), used::Vector{Bool})
 end
 
 function remove_unused_vars!(src::CodeInfo)
-    used = fill(false, length(src.slotnames)+1)
-    used_ssa = fill(false, length(src.ssavaluetypes)+1)
+    used = fill!(Vector{Bool}(uninitialized, (length(src.slotnames)+1,)), false)
+    # used = fill(false, length(src.slotnames)+1)
+    used_ssa = fill!(Vector{Bool}(uninitialized, (length(src.ssavaluetypes)+1,)), false)
+    # used_ssa = fill(false, length(src.ssavaluetypes)+1)
     for i = 1:length(src.code)
         record_used(src.code[i], Slot, used)
         record_used(src.code[i], SSAValue, used_ssa)
@@ -6165,10 +6168,10 @@ function alloc_elim_pass!(sv::OptimizationState)
                     end
                 end
             else
-                vals = Vector{Any}(uninitialized, nv)
+                vals = Vector{Any}(uninitialized, (nv,))
                 local new_slots::Vector{Int}
                 if !is_ssa
-                    new_slots = Vector{Int}(uninitialized, nv)
+                    new_slots = Vector{Int}(uninitialized, (nv,))
                 end
                 for j=1:nv
                     tupelt = tup[j+1]

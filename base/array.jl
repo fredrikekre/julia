@@ -50,6 +50,8 @@ One-dimensional dense array with elements of type `T`, often used to represent
 a mathematical vector. Alias for [`Array{T,1}`](@ref).
 """
 const Vector{T} = Array{T,1}
+# empty vector constructor
+Vector() = Vector{Any}(uninitialized, (0,))
 
 """
     Matrix{T} <: AbstractMatrix{T}
@@ -276,7 +278,7 @@ julia> getindex(Int8, 1, 2, 3)
 ```
 """
 function getindex(::Type{T}, vals...) where T
-    a = Vector{T}(uninitialized, length(vals))
+    a = Vector{T}(uninitialized, (length(vals),))
     @inbounds for i = 1:length(vals)
         a[i] = vals[i]
     end
@@ -284,12 +286,13 @@ function getindex(::Type{T}, vals...) where T
 end
 
 getindex(::Type{T}) where {T} = (@_inline_meta; Vector{T}())
-getindex(::Type{T}, x) where {T} = (@_inline_meta; a = Vector{T}(uninitialized, 1); @inbounds a[1] = x; a)
-getindex(::Type{T}, x, y) where {T} = (@_inline_meta; a = Vector{T}(uninitialized, 2); @inbounds (a[1] = x; a[2] = y); a)
-getindex(::Type{T}, x, y, z) where {T} = (@_inline_meta; a = Vector{T}(uninitialized, 3); @inbounds (a[1] = x; a[2] = y; a[3] = z); a)
+getindex(::Type{T}, x) where {T} = (@_inline_meta; a = Vector{T}(uninitialized, (1,)); @inbounds a[1] = x; a)
+getindex(::Type{T}, x, y) where {T} = (@_inline_meta; a = Vector{T}(uninitialized, (2,)); @inbounds (a[1] = x; a[2] = y); a)
+getindex(::Type{T}, x, y, z) where {T} = (@_inline_meta; a = Vector{T}(uninitialized, (3,)); @inbounds (a[1] = x; a[2] = y; a[3] = z); a)
 
 function getindex(::Type{Any}, @nospecialize vals...)
-    a = Vector{Any}(uninitialized, length(vals))
+    # println("here")
+    a = Vector{Any}(uninitialized, (length(vals),))
     @inbounds for i = 1:length(vals)
         a[i] = vals[i]
     end
@@ -331,7 +334,7 @@ If `x` is an object reference, all elements will refer to the same object. `fill
 dims)` will return an array filled with the result of evaluating `Foo()` once.
 """
 fill(v, dims::Dims)       = fill!(Array{typeof(v)}(uninitialized, dims), v)
-fill(v, dims::Integer...) = fill!(Array{typeof(v)}(uninitialized, dims...), v)
+fill(v, dims::Integer...) = fill!(Array{typeof(v)}(uninitialized, Dims(dims)), v)
 
 """
     zeros([T=Float64,] dims...)

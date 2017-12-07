@@ -525,7 +525,7 @@ See [`Dict`](@ref) for further help.
 mutable struct ObjectIdDict <: Associative{Any,Any}
     ht::Vector{Any}
     ndel::Int
-    ObjectIdDict() = new(Vector{Any}(uninitialized, 32), 0)
+    ObjectIdDict() = new(Vector{Any}(uninitialized, (32,)), 0)
 
     function ObjectIdDict(itr)
         d = ObjectIdDict()

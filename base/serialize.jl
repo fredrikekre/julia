@@ -272,7 +272,7 @@ function serialize(s::AbstractSerializer, a::SubArray{T,N,A}) where {T,N,A<:Arra
 end
 
 function trimmedsubarray(V::SubArray{T,N,A}) where {T,N,A<:Array}
-    dest = Array{eltype(V)}(uninitialized, trimmedsize(V))
+    dest = Array{eltype(V)}(uninitialized, (trimmedsize(V),))
     copy!(dest, V)
     _trimmedsubarray(dest, V, (), V.indexes...)
 end
@@ -926,7 +926,7 @@ function deserialize_array(s::AbstractSerializer)
     end
     if isa(d1, Integer)
         if elty !== Bool && isbits(elty)
-            a = Vector{elty}(uninitialized, d1)
+            a = Vector{elty}(uninitialized, (d1,))
             s.table[slot] = a
             return read!(s.io, a)
         end

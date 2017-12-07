@@ -2183,6 +2183,24 @@ end
     @deprecate SSHCredentials SSHCredential false
 end
 
+# PR TBD
+@deprecate Vector(::Uninitialized, m::Integer) Vector(uninitialized, (Int(m),))
+@deprecate Matrix(::Uninitialized, m::Integer, n::Integer) Vector(uninitialized, (Int(m),Int(n)))
+@deprecate Vector{T}(::Uninitialized, m::Integer) where {T} Vector{T}(uninitialized, (Int(m),))
+@deprecate Matrix{T}(::Uninitialized, m::Integer, n::Integer) where {T} Matrix{T}(uninitialized, (Int(m),Int(n)))
+@deprecate Array{T,1}(::Uninitialized, m::Int) where {T} Array{T,1}(uninitialized, (m,))
+@deprecate Array{T,2}(::Uninitialized, m::Int, n::Int) where {T} Array{T,2}(uninitialized, (m,n))
+@deprecate Array{T,3}(::Uninitialized, m::Int, n::Int, o::Int) where {T} Array{T,3}(uninitialized, (m,n,o))
+@deprecate Array{T,N}(::Uninitialized, d::Vararg{Int,N}) where {T,N} Array{T,N}(uninitialized, d)
+@deprecate Array{T,N}(::Uninitialized, d::Vararg{<:Integer,N}) where {T,N} Array{T,N}(uninitialized, Dims(d))
+@deprecate Array{T}(::Uninitialized, m::Int) where {T} Array{T}(uninitialized, (m,))
+@deprecate Array{T}(::Uninitialized, m::Integer) where {T} Array{T}(uninitialized, Dims((m,)))
+@deprecate Array{T}(::Uninitialized, m::Int, n::Int) where {T} Array{T}(uninitialized, (m,n))
+@deprecate Array{T}(::Uninitialized, m::Integer, n::Integer) where {T} Array{T}(uninitialized, Dims((m,n)))
+@deprecate Array{T}(::Uninitialized, m::Int, n::Int, o::Int) where {T} Array{T}(uninitialized, (m,n,o))
+@deprecate Array{T}(::Uninitialized, m::Integer, n::Integer, o::Integer) where {T} Array{T}(uninitialized, Dims((m,n,o)))
+@deprecate Array{T}(::Uninitialized, d::Integer...) where {T} Array{T}(uninitialized, Dims(d))
+
 # END 0.7 deprecations
 
 # BEGIN 1.0 deprecations
