@@ -202,19 +202,21 @@ function copy!(dest::Hermitian, src::Hermitian)
 end
 
 # fill[stored]!
-function fill!(A::HermOrSym{T}, x) where T
+fill!(A::Symmetric, x) = fillstored!(A, x)
+function fill!(A::Hermitian{T}, x) where T
     xT = convert(T, x)
-    if !iszero(xT)
-        throw(ArgumentError(string("array of type $(typeof(A)) can not be filled",
-            " with $x, since some of its entries are constrained.")))
-    end
+    isreal(xT) || throw(ArgumentError("cannot fill Hermitian matrix with a nonreal value"))
     return fillstored!(A, xT)
 end
-function fillstored!(A::HermOrSym, x)
+function fillstored!(A::HermOrSym{T}, x) where T
+    xT = convert(T, x)
+    if isa(A, Hermitian)
+        isreal(xT) || throw(ArgumentError("cannot fill Hermitian matrix with a nonreal value"))
+    end
     if A.uplo == 'U'
-        fillband!(A.data, x, 0, size(A,2)-1)
+        fillband!(A.data, xT, 0, size(A,2)-1)
     else # A.uplo == 'L'
-        fillband!(A.data, x, 1-size(A,1), 0)
+        fillband!(A.data, xT, 1-size(A,1), 0)
     end
     return A
 end
