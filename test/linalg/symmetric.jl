@@ -469,3 +469,14 @@ end
     @test_throws TypeError Symmetric{Float64,Matrix{Float32}}(A, 'U')
     @test_throws TypeError Hermitian{Float64,Matrix{Float32}}(A, 'U')
 end
+
+@testset "fill[stored]!" begin
+    for HS in (Hermitian, Symmetric), uplo in (:U,:L)
+        A = HS(fill(1.0+im, 4 ,4), uplo)
+        LinAlg.fillstored!(A, 2.0-2im)
+        @test A == HS(fill(2.0-2im, 4 ,4), uplo)
+
+        @test iszero(fill!(A, 0))
+        @test_throws ArgumentError fill!(A, 2)
+    end
+end

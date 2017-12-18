@@ -201,6 +201,24 @@ function copy!(dest::Hermitian, src::Hermitian)
     return dest
 end
 
+# fill[stored]!
+function fill!(A::HermOrSym{T}, x) where T
+    xT = convert(T, x)
+    if !iszero(xT)
+        throw(ArgumentError(string("array of type $(typeof(A)) can not be filled",
+            " with $x, since some of its entries are constrained.")))
+    end
+    return fillstored!(A, xT)
+end
+function fillstored!(A::HermOrSym, x)
+    if A.uplo == 'U'
+        fillband!(A.data, x, 0, size(A,2)-1)
+    else # A.uplo == 'L'
+        fillband!(A.data, x, 1-size(A,1), 0)
+    end
+    return A
+end
+
 function Base.isreal(A::HermOrSym)
     n = size(A, 1)
     @inbounds if A.uplo == 'U'
