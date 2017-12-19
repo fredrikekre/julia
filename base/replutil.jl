@@ -361,7 +361,11 @@ function showerror(io::IO, ex::MethodError)
                     end
                 end
             end
-            print(io, "no method matching ", f)
+            if isa(f, UnionAll)
+                print(io, "no method matching (", f, ")")
+            else
+                print(io, "no method matching ", f)
+            end
         else
             print(io, "no method matching (::", ft, ")")
         end
