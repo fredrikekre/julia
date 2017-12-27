@@ -110,7 +110,7 @@ convert(::Type{LogLevel}, level::Integer) = LogLevel(level)
 const BelowMinLevel = LogLevel(-1000001)
 const Debug         = LogLevel(   -1000)
 const Info          = LogLevel(       0)
-const Warn          = LogLevel(    1000)
+const Warning       = LogLevel(    1000)
 const Error         = LogLevel(    2000)
 const AboveMaxLevel = LogLevel( 1000001)
 
@@ -118,7 +118,7 @@ function show(io::IO, level::LogLevel)
     if     level == BelowMinLevel  print(io, "BelowMinLevel")
     elseif level == Debug          print(io, "Debug")
     elseif level == Info           print(io, "Info")
-    elseif level == Warn           print(io, "Warn")
+    elseif level == Warning        print(io, "Warning")
     elseif level == Error          print(io, "Error")
     elseif level == AboveMaxLevel  print(io, "AboveMaxLevel")
     else                           print(io, "LogLevel($(level.level))")
@@ -139,7 +139,7 @@ _logmsg_docs = """
 
 Create a log record with an informational `message`.  For convenience, four
 logging macros `@debug`, `@info`, `@warn` and `@error` are defined which log at
-the standard severity levels `Debug`, `Info`, `Warn` and `Error`.  `@logmsg`
+the standard severity levels `Debug`, `Info`, `Warning` and `Error`. `@logmsg`
 allows `level` to be set programmatically to any `LogLevel` or custom log level
 types.
 
@@ -483,10 +483,11 @@ function handle_message(logger::SimpleLogger, level, message, _module, group, id
         logger.message_limits[id] = remaining - 1
         remaining > 0 || return
     end
-    levelstr, color = level < Info  ? ("Debug", Base.debug_color()) :
-                      level < Warn  ? ("Info", Base.info_color()) :
-                      level < Error ? ("Warning", Base.warn_color()) :
-                                      ("Error", Base.error_color())
+    color = level < Info    ? Base.debug_color() :
+            level < Warning ? Base.info_color()  :
+            level < Error   ? Base.warn_color()  :
+                              Base.error_color()
+    levelstr = string(level)
     buf = IOBuffer()
     iob = IOContext(buf, logger.stream)
     msglines = split(chomp(string(message)), '\n')
