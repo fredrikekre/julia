@@ -315,6 +315,7 @@ function logmsg_code(_module, file, line, level, message, exs...)
                     # defer creation of the records until after filtering.
                     create_msg = function cm(logger, level, _module, group, id, file, line)
                         msg = $(esc(message))
+                        println("HHHHHHHH")
                         handle_message(logger, level, msg, _module, group, id, file, line; $(kwargs...))
                     end
                     file = $file
@@ -337,25 +338,35 @@ end
     try
         create_msg(logger, level, _module, group, id, filepath, line)
     catch err
-        if !catch_exceptions(logger)
-            rethrow(err)
-        end
-        # Try really hard to get the message to the logger, with
-        # progressively less information.
+        # Give up and write to STDERR, in three independent calls to
+        # increase the odds of it getting through.
         try
-            msg = "Exception while generating log record in module $_module at $filepath:$line"
-            handle_message(logger, Error, msg, _module, group, id, filepath, line; exception=err)
-        catch err2
-            try
-                # Give up and write to STDERR, in three independent calls to
-                # increase the odds of it getting through.
-                print(STDERR, "Exception handling log message: ")
-                println(STDERR, err)
-                println(STDERR, "  module=$_module  file=$filepath  line=$line")
-                println(STDERR, "  Second exception: ", err2)
-            catch
-            end
+            print(STDERR, "Error: Exception mmmhandling log message @ $(_module) $(filepath):$(line) ")
+            showerror(STDERR, err)
+            # println(STDERR, err)
+            # println(STDERR, "  module=$_module  file=$filepath  line=$line")
+            # println(STDERR, "  Second exception: ", err2)
+        catch
         end
+
+        # if !catch_exceptions(logger)
+        #     rethrow(err)
+        # end
+        # # Try really hard to get the message to the logger, with
+        # # progressively less information.
+        # try
+        #     msg = "Exception while generating log record in module $_module at $filepath:$line"
+        #     handle_message(logger, Error, msg, _module, group, id, filepath, line; exception=err)
+        # catch err2
+        #     try
+
+        #         print(STDERR, "Exception handling log message: ")
+        #         println(STDERR, err)
+        #         println(STDERR, "  module=$_module  file=$filepath  line=$line")
+        #         println(STDERR, "  Second exception: ", err2)
+        #     catch
+        #     end
+        # end
     end
     nothing
 end
@@ -478,37 +489,48 @@ function handle_message(logger::SimpleLogger, level, message, _module, group, id
                         filepath, line; maxlog=nothing, kwargs...)
     # TODO: Factor out more complex things here into a separate logger in
     # stdlib: in particular maxlog support + colorization.
-    if maxlog != nothing && maxlog isa Integer
-        remaining = get!(logger.message_limits, id, maxlog)
-        logger.message_limits[id] = remaining - 1
-        remaining > 0 || return
-    end
-    levelstr, color = level < Info  ? ("Debug", Base.debug_color()) :
-                      level < Warn  ? ("Info", Base.info_color()) :
-                      level < Error ? ("Warning", Base.warn_color()) :
-                                      ("Error", Base.error_color())
-    buf = IOBuffer()
-    iob = IOContext(buf, logger.stream)
-    msglines = split(chomp(string(message)), '\n')
-    if length(msglines) + length(kwargs) == 1
-        print_with_color(color, iob, "[ ", levelstr, ": ", bold=true)
-        print(iob, msglines[1], " ")
-    else
-        print_with_color(color, iob, "┌ ", levelstr, ": ", bold=true)
-        println(iob, msglines[1])
-        for i in 2:length(msglines)
-            print_with_color(color, iob, "│ ", bold=true)
-            println(iob, msglines[i])
+    @show "IM HEREEEE"
+    try
+        if maxlog != nothing && maxlog isa Integer
+            remaining = get!(logger.message_limits, id, maxlog)
+            logger.message_limits[id] = remaining - 1
+            remaining > 0 || return
         end
-        for (key,val) in pairs(kwargs)
-            print_with_color(color, iob, "│ ", bold=true)
-            println(iob, "  ", key, " = ", val)
+        levelstr, color = level < Info  ? ("Debug", Base.debug_color()) :
+                          level < Warn  ? ("Info", Base.info_color()) :
+                          level < Error ? ("Warning", Base.warn_color()) :
+                                          ("Error", Base.error_color())
+        buf = IOBuffer()
+        iob = IOContext(buf, logger.stream)
+        msglines = split(chomp(string(message)), '\n')
+        if length(msglines) + length(kwargs) == 1
+            print_with_color(color, iob, "[ ", levelstr, ": ", bold=true)
+            print(iob, msglines[1], " ")
+        else
+            print_with_color(color, iob, "┌ ", levelstr, ": ", bold=true)
+            println(iob, msglines[1])
+            for i in 2:length(msglines)
+                print_with_color(color, iob, "│ ", bold=true)
+                println(iob, msglines[i])
+            end
+            for (key,val) in pairs(kwargs)
+                print_with_color(color, iob, "│ ", bold=true)
+                println(iob, "  ", key, " = ", val)
+            end
+            print_with_color(color, iob, "└ ", bold=true)
         end
-        print_with_color(color, iob, "└ ", bold=true)
+        print_with_color(:light_black, iob, "@ ", _module, " ", basename(filepath), ":", line, "\n")
+        write(logger.stream, take!(buf))
+        return nothing
+    catch err
+        if !catch_exceptions(logger)
+            rethrow(err)
+        end
+        msg = "Exception while generating log record:\n"
+        msg *= join("  " .* split(sprint(showerror, err), "\n"), "\n")
+        handle_message(logger, Error, msg, _module, group, id, filepath,
+                       line; maxlog=maxlog)
     end
-    print_with_color(:light_black, iob, "@ ", _module, " ", basename(filepath), ":", line, "\n")
-    write(logger.stream, take!(buf))
-    nothing
 end
 
 end # CoreLogging
