@@ -427,8 +427,8 @@ include("libgit2/libgit2.jl")
 include("pkg/pkg.jl")
 
 # sparse matrices, vectors, and sparse linear algebra
-include("sparse/sparse.jl")
-using .SparseArrays
+# include("sparse/sparse.jl")
+# using .SparseArrays
 
 include("asyncmap.jl")
 
@@ -498,6 +498,7 @@ Base.require(:IterativeEigensolvers)
 Base.require(:Mmap)
 Base.require(:Profile)
 Base.require(:SharedArrays)
+Base.require(:SparseArrays)
 Base.require(:SuiteSparse)
 Base.require(:Test)
 Base.require(:Unicode)

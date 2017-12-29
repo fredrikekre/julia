@@ -36,7 +36,7 @@ function choosetests(choices = [])
         "char", "strings", "triplequote", "unicode", "intrinsics",
         "dict", "hashing", "iobuffer", "staged", "offsetarray",
         "arrayops", "tuple", "reduce", "reducedim", "random", "abstractarray",
-        "intfuncs", "simdloop", "vecelement", "sparse",
+        "intfuncs", "simdloop", "vecelement",
         "bitarray", "copy", "math", "fastmath", "functional", "iterators",
         "operators", "path", "ccall", "parse", "loading", "bigint",
         "bigfloat", "sorting", "statistics", "spawn", "backtrace",
@@ -101,14 +101,14 @@ function choosetests(choices = [])
         prepend!(tests, stringtests)
     end
 
-    sparsetests = ["sparse/sparse", "sparse/sparsevector", "sparse/higherorderfns"]
-    if "sparse" in skip_tests
-        filter!(x -> (x != "sparse" && !(x in sparsetests)), tests)
-    elseif "sparse" in tests
-        # specifically selected case
-        filter!(x -> x != "sparse", tests)
-        prepend!(tests, sparsetests)
-    end
+    # sparsetests = ["sparse/sparse", "sparse/sparsevector", "sparse/higherorderfns"]
+    # if "sparse" in skip_tests
+    #     filter!(x -> (x != "sparse" && !(x in sparsetests)), tests)
+    # elseif "sparse" in tests
+    #     # specifically selected case
+    #     filter!(x -> x != "sparse", tests)
+    #     prepend!(tests, sparsetests)
+    # end
 
     # do subarray before sparse but after linalg
     if "subarray" in skip_tests

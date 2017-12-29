@@ -10,7 +10,7 @@ import Base.LinAlg: (\),
                  issuccess, issymmetric, ldltfact, ldltfact!, logdet,
                  Adjoint, Transpose
 
-using ..SparseArrays
+using SparseArrays
 using Base.Printf.@printf
 
 export
@@ -18,7 +18,7 @@ export
     Factor,
     Sparse
 
-import ..SparseArrays: AbstractSparseMatrix, SparseMatrixCSC, indtype, sparse, spzeros, nnz
+import SparseArrays: AbstractSparseMatrix, SparseMatrixCSC, indtype, sparse, spzeros, nnz
 
 import ..increment, ..increment!, ..decrement, ..decrement!
 

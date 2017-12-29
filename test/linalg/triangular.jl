@@ -5,6 +5,7 @@ using Test
 using Base.LinAlg: BlasFloat, errorbounds, full!, naivesub!, transpose!,
                     UnitUpperTriangular, UnitLowerTriangular,
                     mul!, rdiv!, Adjoint, Transpose
+using SparseArrays
 
 debug && println("Triangular matrices")
 

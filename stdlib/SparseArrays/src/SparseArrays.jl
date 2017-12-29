@@ -1,5 +1,7 @@
 # This file is a part of Julia. License is MIT: https://julialang.org/license
 
+__precompile__(true)
+
 """
 Support for sparse arrays. Provides `AbstractSparseArray` and subtypes.
 """
@@ -31,10 +33,16 @@ export AbstractSparseArray, AbstractSparseMatrix, AbstractSparseVector,
     issparse, nonzeros, nzrange, rowvals, sparse, sparsevec, spdiagm,
     sprand, sprandn, spzeros, nnz, permute
 
-include("abstractsparse.jl")
-include("sparsematrix.jl")
-include("sparsevector.jl")
-include("higherorderfns.jl")
-include("linalg.jl")
+include(joinpath(@__DIR__, "abstractsparse.jl"))
+include(joinpath(@__DIR__, "sparsematrix.jl"))
+include(joinpath(@__DIR__, "sparsevector.jl"))
+include(joinpath(@__DIR__, "higherorderfns.jl"))
+include(joinpath(@__DIR__, "linalg.jl"))
+include(joinpath(@__DIR__, "deprecated.jl"))
+
+similar(B::Bidiagonal, ::Type{T}, dims::Union{Dims{1},Dims{2}}) where {T} = spzeros(T, dims...)
+similar(D::Diagonal, ::Type{T}, dims::Union{Dims{1},Dims{2}}) where {T} = spzeros(T, dims...)
+similar(S::SymTridiagonal, ::Type{T}, dims::Union{Dims{1},Dims{2}}) where {T} = spzeros(T, dims...)
+similar(M::Tridiagonal, ::Type{T}, dims::Union{Dims{1},Dims{2}}) where {T} = spzeros(T, dims...)
 
 end
