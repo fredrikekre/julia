@@ -141,7 +141,7 @@ end
     Lfull, Qfull = lq(A, full = true)
     @test size(Lfull) == (m, m)
     @test size(Qfull) == (n, n)
-    @test isapprox(A, [Lfull zeros(m, n - m)] * Qfull)
+    @test isapprox(A, [Lfull fill(0, (m, n-m))] * Qfull)
 end
 
 @testset "getindex on LQPackedQ (#23733)" begin
@@ -216,8 +216,8 @@ end
     mA, nA = 3, 4
     implicitQ, explicitQ = getqs(lqfact(randn(mA, nA)))
     C = randn(mA, mA)
-    zeroextCright = hcat(C, zeros(eltype(C), mA))
-    zeroextCdown = vcat(C, zeros(eltype(C), (1, mA)))
+    zeroextCright = hcat(C, fill(0, mA))
+    zeroextCdown = vcat(C, fill(0, (1, mA)))
     @test *(C, implicitQ) ≈ *(zeroextCright, explicitQ)
     @test *(Adjoint(C), implicitQ) ≈ *(Adjoint(zeroextCdown), explicitQ)
     @test_throws DimensionMismatch C * Adjoint(implicitQ)
