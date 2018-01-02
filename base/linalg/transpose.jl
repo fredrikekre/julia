@@ -20,10 +20,7 @@ julia> A = [3+2im 9+2im; 8+7im  4+6im]
  3+2im  9+2im
  8+7im  4+6im
 
-julia> B = zeros(Complex{Int64}, 2, 2)
-2×2 Array{Complex{Int64},2}:
- 0+0im  0+0im
- 0+0im  0+0im
+julia> B = Matrix{Complex{Int64}}(uninitialized, 2, 2);
 
 julia> transpose!(B, A);
 
@@ -55,10 +52,7 @@ julia> A = [3+2im 9+2im; 8+7im  4+6im]
  3+2im  9+2im
  8+7im  4+6im
 
-julia> B = zeros(Complex{Int64}, 2, 2)
-2×2 Array{Complex{Int64},2}:
- 0+0im  0+0im
- 0+0im  0+0im
+julia> B = Matrix{Complex{Int64}}(uninitialized, 2, 2);
 
 julia> adjoint!(B, A);
 
