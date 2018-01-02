@@ -736,7 +736,7 @@ and `tau`, which stores the elementary reflectors.
 """
 function geqp3!(A::StridedMatrix{<:BlasFloat})
     m, n = size(A)
-    geqp3!(A, zeros(BlasInt, n), similar(A, min(m, n)))
+    geqp3!(A, fill(zero(BlasInt), n), similar(A, min(m, n)))
 end
 
 ## Complete orthogonaliztion tools
@@ -1205,7 +1205,7 @@ for (gelsd, gelsy, elty) in
             if size(B, 1) != m
                 throw(DimensionMismatch("B has leading dimension $(size(B,1)) but needs $m"))
             end
-            newB = [B; zeros($elty, max(0, n - size(B, 1)), size(B, 2))]
+            newB = [B; fill(zero($elty), max(0, n - size(B, 1)), size(B, 2))]
             s     = similar(A, $elty, min(m, n))
             rnk   = Ref{BlasInt}()
             info  = Ref{BlasInt}()
@@ -1249,10 +1249,10 @@ for (gelsd, gelsy, elty) in
             if size(B, 1) != m
                 throw(DimensionMismatch("B has leading dimension $(size(B,1)) but needs $m"))
             end
-            newB = [B; zeros($elty, max(0, n - size(B, 1)), size(B, 2))]
+            newB = [B; fill(zero($elty), max(0, n - size(B, 1)), size(B, 2))]
             lda = max(1, m)
             ldb = max(1, m, n)
-            jpvt = zeros(BlasInt, n)
+            jpvt = fill(zero(BlasInt), n)
             rnk = Ref{BlasInt}()
             work = Vector{$elty}(uninitialized, 1)
             lwork = BlasInt(-1)
@@ -1298,7 +1298,7 @@ for (gelsd, gelsy, elty, relty) in
             if size(B, 1) != m
                 throw(DimensionMismatch("B has leading dimension $(size(B,1)) but needs $m"))
             end
-            newB = [B; zeros($elty, max(0, n - size(B, 1)), size(B, 2))]
+            newB = [B; fill(zero($elty), max(0, n - size(B, 1)), size(B, 2))]
             s     = similar(A, $relty, min(m, n))
             rnk   = Ref{BlasInt}()
             info  = Ref{BlasInt}()
@@ -1344,10 +1344,10 @@ for (gelsd, gelsy, elty, relty) in
             if size(B, 1) != m
                 throw(DimensionMismatch("B has leading dimension $(size(B,1)) but needs $m"))
             end
-            newB = [B; zeros($elty, max(0, n - size(B, 1)), size(B, 2))]
+            newB = [B; fill(zero($elty), max(0, n - size(B, 1)), size(B, 2))]
             lda = max(1, m)
             ldb = max(1, m, n)
-            jpvt = zeros(BlasInt, n)
+            jpvt = fill(zero(BlasInt), n)
             rnk = Ref{BlasInt}(1)
             work = Vector{$elty}(uninitialized, 1)
             lwork = BlasInt(-1)
@@ -1423,7 +1423,7 @@ for (gglse, elty) in ((:dgglse_, :Float64),
             if length(d) != p
                 throw(DimensionMismatch("d has length $(length(d)), needs $p"))
             end
-            X = zeros($elty, n)
+            X = fill(zero($elty), n)
             info  = Ref{BlasInt}()
             work  = Vector{$elty}(uninitialized, 1)
             lwork = BlasInt(-1)
@@ -3718,7 +3718,7 @@ for (stev, stebz, stegr, stein, elty) in
             if length(ev_in) != n - 1
                 throw(DimensionMismatch("ev_in has length $(length(ev_in)) but needs one less than dv's length, $n)"))
             end
-            ev = [ev_in; zeros($elty,1)]
+            ev = [ev_in; fill(zero($elty),1)]
             ldz = n #Leading dimension
             #Number of eigenvalues to find
             if !(1 <= length(w_in) <= n)
@@ -3765,9 +3765,9 @@ end
 stegr!(jobz::Char, dv::StridedVector, ev::StridedVector) = stegr!(jobz, 'A', dv, ev, 0.0, 0.0, 0, 0)
 
 # Allow user to skip specification of iblock and isplit
-stein!(dv::StridedVector, ev::StridedVector, w_in::StridedVector)=stein!(dv, ev, w_in, zeros(BlasInt,0), zeros(BlasInt,0))
+stein!(dv::StridedVector, ev::StridedVector, w_in::StridedVector)=stein!(dv, ev, w_in, fill(zero(BlasInt),0), fill(zero(BlasInt),0))
 # Allow user to specify just one eigenvector to get in stein!
-stein!(dv::StridedVector, ev::StridedVector, eval::Real)=stein!(dv, ev, [eval], zeros(BlasInt,0), zeros(BlasInt,0))
+stein!(dv::StridedVector, ev::StridedVector, eval::Real)=stein!(dv, ev, [eval], fill(zero(BlasInt),0), fill(zero(BlasInt),0))
 
 """
     stev!(job, dv, ev) -> (dv, Zmat)
