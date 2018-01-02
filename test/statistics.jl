@@ -183,8 +183,8 @@ Y = adjoint([6. 1. 5. 3. 2.; 2. 7. 8. 4. 3.])
         # println("vd = $vd: zm = $zm, cr = $cr")
         if vd == 1
             k = size(X, 2)
-            Cxx = zeros(k, k)
-            Cxy = zeros(k, k)
+            Cxx = fill(0.0, (k, k))
+            Cxy = fill(0.0, (k, k))
             for i = 1:k, j = 1:k
                 Cxx[i,j] = safe_cov(X[:,i], X[:,j], zm, cr)
                 Cxy[i,j] = safe_cov(X[:,i], Y[:,j], zm, cr)
@@ -193,8 +193,8 @@ Y = adjoint([6. 1. 5. 3. 2.; 2. 7. 8. 4. 3.])
             y1 = vec(Y[:,1])
         else
             k = size(X, 1)
-            Cxx = zeros(k, k)
-            Cxy = zeros(k, k)
+            Cxx = fill(0.0, (k, k))
+            Cxy = fill(0.0, (k, k))
             for i = 1:k, j = 1:k
                 Cxx[i,j] = safe_cov(X[i,:], X[j,:], zm, cr)
                 Cxy[i,j] = safe_cov(X[i,:], Y[j,:], zm, cr)
@@ -264,8 +264,8 @@ end
         # println("vd = $vd: zm = $zm")
         if vd == 1
             k = size(X, 2)
-            Cxx = zeros(k, k)
-            Cxy = zeros(k, k)
+            Cxx = fill(0.0, (k, k))
+            Cxy = fill(0.0, (k, k))
             for i = 1:k, j = 1:k
                 Cxx[i,j] = safe_cor(X[:,i], X[:,j], zm)
                 Cxy[i,j] = safe_cor(X[:,i], Y[:,j], zm)
@@ -274,8 +274,8 @@ end
             y1 = vec(Y[:,1])
         else
             k = size(X, 1)
-            Cxx = zeros(k, k)
-            Cxy = zeros(k, k)
+            Cxx = fill(0.0, (k, k))
+            Cxy = fill(0.0, (k, k))
             for i = 1:k, j = 1:k
                 Cxx[i,j] = safe_cor(X[i,:], X[j,:], zm)
                 Cxy[i,j] = safe_cor(X[i,:], Y[j,:], zm)
@@ -450,10 +450,10 @@ end
 end
 
 @testset "Mean along dimension of empty array" begin
-    a0  = zeros(0)
-    a00 = zeros(0, 0)
-    a01 = zeros(0, 1)
-    a10 = zeros(1, 0)
+    a0  = fill(0.0, 0)
+    a00 = fill(0.0, 0, 0)
+    a01 = fill(0.0, 0, 1)
+    a10 = fill(0.0, 1, 0)
     @test isequal(mean(a0, 1)      , fill(NaN, 1))
     @test isequal(mean(a00, (1, 2)), fill(NaN, 1, 1))
     @test isequal(mean(a01, 1)     , fill(NaN, 1, 1))
