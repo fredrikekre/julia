@@ -1046,7 +1046,7 @@ See also [`accumulate`](@ref).
 ``jldoctest
 julia> x = SparseVector(7, [1, 3, 5], [2., 4., 5.]);
 
-julia> y = zeros(7);
+julia> y = fill(0.0, 7);
 
 julia> accumulate!(+, y, x);
 
@@ -1139,7 +1139,7 @@ the same object. `fill!(A, Foo())` will return `A` filled with the result of eva
 
 # Examples
 ```jldoctest
-julia> A = zeros(2,3)
+julia> A = fill(0.0, 2, 3)
 2×3 Array{Float64,2}:
  0.0  0.0  0.0
  0.0  0.0  0.0
@@ -1180,19 +1180,17 @@ the other elements are left untouched.
 
 # Examples
 ```jldoctest
-julia> x = [1., 0., 3., 0., 5.];
+julia> x = [1.0, 2.0, 3.0];
 
-julia> y = zeros(7);
+julia> y = [0.0, 0.0, 0.0, 0.0, 0.0];
 
 julia> copyto!(y, x);
 
 julia> y
-7-element Array{Float64,1}:
+5-element Array{Float64,1}:
  1.0
- 0.0
+ 2.0
  3.0
- 0.0
- 5.0
  0.0
  0.0
 ```
@@ -1739,7 +1737,7 @@ julia> unique(A, 3)
 ```
 """
 @generated function unique(A::AbstractArray{T,N}, dim::Int) where {T,N}
-    inds = inds -> zeros(UInt, inds)
+    inds = inds -> fill(UInt(0), inds)
     quote
         1 <= dim <= $N || return copy(A)
         hashes = similar($inds, axes(A, dim))
