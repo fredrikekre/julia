@@ -34,6 +34,31 @@ function scale!(X::Array{T}, s::Real) where T<:BlasComplex
     X
 end
 
+"""
+    LinAlg.fillstored!(A::AbstractVecOrMat, x)
+
+Set the stored values of `A` to the value `x`. The stored values
+
+# Examples
+```jldoctest
+julia> A = Diagonal([1, 2, 3])
+3×3 Diagonal{Int64,Array{Int64,1}}:
+ 1  ⋅  ⋅
+ ⋅  2  ⋅
+ ⋅  ⋅  3
+
+julia> LinAlg.fillstored!(A, 4)
+3×3 Diagonal{Int64,Array{Int64,1}}:
+ 4  ⋅  ⋅
+ ⋅  4  ⋅
+ ⋅  ⋅  4
+"""
+fillstored!
+
+# generic fillstored! implementation relying on the AbstractArray's
+# setindex! method to throw if this is an invalid operation
+fillstored!(A::AbstractVecOrMat, x) = (for i in eachindex(A); A[i] = x; end; A)
+
 
 function isone(A::StridedMatrix)
     m, n = size(A)

@@ -124,6 +124,28 @@ mul!(A::AbstractTriangular, adjB::Adjoint{<:Any,<:Union{QRCompactWYQ,QRPackedQ}}
     (B = adjB.parent; *(copyto!(similar(parent(A)), A), Adjoint(B)))
 
 # fill[stored]! methods
+"""
+    LinAlg.fillstored!(A::Diagonal, x)
+    LinAlg.fillstored!(A::Bidiagonal, x)
+    LinAlg.fillstored!(A::Tridiagonal, x)
+    LinAlg.fillstored!(A::SymTridiagonal, x)
+
+Fill the wrapped vectors with the value `x`.
+
+# Examples
+```jldoctest
+julia> A = Diagonal([1, 2, 3])
+3×3 Diagonal{Int64,Array{Int64,1}}:
+ 1  ⋅  ⋅
+ ⋅  2  ⋅
+ ⋅  ⋅  3
+
+julia> LinAlg.fillstored!(A, 4)
+3×3 Diagonal{Int64,Array{Int64,1}}:
+ 4  ⋅  ⋅
+ ⋅  4  ⋅
+ ⋅  ⋅  4
+"""
 fillstored!(A::Diagonal, x) = (fill!(A.diag, x); A)
 fillstored!(A::Bidiagonal, x) = (fill!(A.dv, x); fill!(A.ev, x); A)
 fillstored!(A::Tridiagonal, x) = (fill!(A.dl, x); fill!(A.d, x); fill!(A.du, x); A)

@@ -823,3 +823,12 @@ end
     @test Base.LinAlg.stride1(a) == 1
     @test Base.LinAlg.stride1(b) == 2
 end
+
+@testset "LinAlg.fillstored! fallback" begin
+    for S in ((5,), (5,5))
+        A = Array{Float64}(uninitialized, S); G = GenericArray(copy(A))
+        x = rand(); X = fill(x, S)
+        @test LinAlg.fillstored!(A, x) == X
+        @test LinAlg.fillstored!(G, x) == X
+    end
+end
