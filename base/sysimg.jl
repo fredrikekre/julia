@@ -152,6 +152,17 @@ Matrix(::Uninitialized, m::Integer, n::Integer) = Matrix{Any}(uninitialized, Int
 # empty vector constructor
 Vector() = Vector{Any}(uninitialized, 0)
 
+# fill-like Array constructors
+# type and dimensionality specified
+Array{T,N}(x, d...) where {T,N} = fill!(Array{T,N}(uninitialized, d...), x)
+# type but not dimensionality specified
+Array{T}(x, d...) where {T} = fill!(Array{T}(uninitialized, d...), x)
+# both type and dimensionality unspecified
+Array(x, d...) = fill!(Array{typeof(x)}(uninitialized, d...), x)
+# dimensionality but not type specified
+Vector(x, d...) = fill!(Vector{typeof(x)}(uninitialized, d...), x)
+Matrix(x, d...) = fill!(Matrix{typeof(x)}(uninitialized, d...), x)
+
 # Array constructors for nothing and missing
 # type and dimensionality specified
 Array{T,N}(::Nothing, d...) where {T,N} = fill!(Array{T,N}(uninitialized, d...), nothing)
