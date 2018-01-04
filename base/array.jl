@@ -340,15 +340,16 @@ fill(v, dims::Dims)       = fill!(Array{typeof(v)}(uninitialized, dims), v)
 fill(v, dims::Integer...) = fill!(Array{typeof(v)}(uninitialized, dims...), v)
 
 """
-    zeros([T=Float64,] dims...)
+    zeros(T, dims...)
 
-Create an `Array`, with element type `T`, of all zeros with size specified by `dims`.
-See also [`fill`](@ref), [`ones`](@ref).
+Create an [`Array{T}`](@ref), filled with `zero(T)`, and size specified by `dims`.
+`zeros` is provided for convenience, for a more general solution see [`fill`](@ref).
 
 # Examples
 ```jldoctest
-julia> zeros(1)
-1-element Array{Float64,1}:
+julia> zeros(Float64, 2)
+2-element Array{Float64,1}:
+ 0.0
  0.0
 
 julia> zeros(Int8, 2, 3)
@@ -362,7 +363,7 @@ function zeros end
 """
     ones([T=Float64,] dims...)
 
-Create an `Array`, with element type `T`, of all ones with size specified by `dims`.
+Create an `Array{T}`, with element type `T`, of all ones with size specified by `dims`.
 See also: [`fill`](@ref), [`zeros`](@ref).
 
 # Examples
