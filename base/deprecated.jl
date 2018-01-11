@@ -938,6 +938,10 @@ end
 @deprecate ones(::Type{T}, dims...) where {T} fill(one(T), dims...)
 @deprecate ones(dims...) fill(1., dims...)
 
+# deprecate zeros(dims) (when removed: activate tests in test/arrayops.jl)
+@deprecate zeros(dims::Tuple)    zeros(Float64, dims)
+@deprecate zeros(dims...)        zeros(Float64, dims)
+
 # PR #23711
 @eval LibGit2 begin
     @deprecate get_creds!(cache::CachedCredentials, credid, default) get!(cache, credid, default)
