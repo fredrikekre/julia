@@ -1950,21 +1950,21 @@ end
 @testset "show" begin
     io = IOBuffer()
     show(io, MIME"text/plain"(), sparse(Int64[1], Int64[1], [1.0]))
-    @test String(take!(io)) == "1×1 SparseArrays.SparseMatrixCSC{Float64,Int64} with 1 stored entry:\n  [1, 1]  =  1.0"
+    @test contains(String(take!(io)), r"1×1 (SparseArrays\.)?SparseMatrixCSC{Float64,Int64} with 1 stored entry:\n  \[1, 1\]  =  1.0")
     show(io, MIME"text/plain"(), spzeros(Float32, Int64, 2, 2))
-    @test String(take!(io)) == "2×2 SparseArrays.SparseMatrixCSC{Float32,Int64} with 0 stored entries"
+    @test contains(String(take!(io)), r"2×2 (SparseArrays\.)?SparseMatrixCSC{Float32,Int64} with 0 stored entries")
 
     ioc = IOContext(io, :displaysize => (5, 80), :limit => true)
     show(ioc, MIME"text/plain"(), sparse(Int64[1], Int64[1], [1.0]))
-    @test String(take!(io)) == "1×1 SparseArrays.SparseMatrixCSC{Float64,Int64} with 1 stored entry:\n  [1, 1]  =  1.0"
+    @test contains(String(take!(io)), r"1×1 (SparseArrays\.)?SparseMatrixCSC{Float64,Int64} with 1 stored entry:\n  \[1, 1\]  =  1.0")
     show(ioc, MIME"text/plain"(), sparse(Int64[1, 1], Int64[1, 2], [1.0, 2.0]))
-    @test String(take!(io)) == "1×2 SparseArrays.SparseMatrixCSC{Float64,Int64} with 2 stored entries:\n  ⋮"
+    @test contains(String(take!(io)), r"1×2 (SparseArrays\.)?SparseMatrixCSC{Float64,Int64} with 2 stored entries:\n  ⋮")
 
     # even number of rows
     ioc = IOContext(io, :displaysize => (8, 80), :limit => true)
     show(ioc, MIME"text/plain"(), sparse(Int64[1,2,3,4], Int64[1,1,2,2], [1.0,2.0,3.0,4.0]))
-    @test String(take!(io)) == string("4×2 SparseArrays.SparseMatrixCSC{Float64,Int64} with 4 stored entries:\n  [1, 1]",
-                                      "  =  1.0\n  [2, 1]  =  2.0\n  [3, 2]  =  3.0\n  [4, 2]  =  4.0")
+    @test contains(String(take!(io)), Regex(string("4×2 (SparseArrays\\.)?SparseMatrixCSC{Float64,Int64} with 4 stored entries:\n",
+                                      "  \[1, 1\]  =  1.0\n  \[2, 1\]  =  2.0\n  \[3, 2\]  =  3.0\n  \[4, 2\]  =  4.0")))
 
     show(ioc, MIME"text/plain"(), sparse(Int64[1,2,3,4,5], Int64[1,1,2,2,3], [1.0,2.0,3.0,4.0,5.0]))
     @test String(take!(io)) ==  string("5×3 SparseArrays.SparseMatrixCSC{Float64,Int64} with 5 stored entries:\n  [1, 1]",
