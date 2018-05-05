@@ -392,8 +392,10 @@ julia> x = collect(reshape(1:9, 3, 3))
  2  5  8
  3  6  9
 
-julia> x[1:2, 2:3] = -1
--1
+julia> x[1:2, 2:3] .= -1
+2×2 view(::Array{Int64,2}, 1:2, 2:3) with eltype Int64:
+ -1  -1
+ -1  -1
 
 julia> x
 3×3 Array{Int64,2}:
