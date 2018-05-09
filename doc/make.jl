@@ -147,11 +147,21 @@ for stdlib in STDLIB_DOCS
     @eval using $(stdlib.stdlib)
 end
 
+if "doctest-fix" in ARGS
+    DOCTEST = :fix
+elseif "doctest" in ARGS
+    DOCTEST = true
+else
+    # Travis Linux 64-bit and CircleCI 64-bit
+    DOCTEST = get(ENV, "ARCH", "") == "x86_64" &&
+        (get(ENV, "TRAVIS_OS_NAME", "") == "linux" || get(ENV, "CIRCLECI", "") == "true")
+end
+
 makedocs(
     build     = joinpath(@__DIR__, "_build/html/en"),
     modules   = [Base, Core, BuildSysImg, [Base.root_module(Base, stdlib.stdlib) for stdlib in STDLIB_DOCS]...],
     clean     = true,
-    doctest   = ("doctest-fix" in ARGS) ? (:fix) : ("doctest" in ARGS),
+    doctest   = DOCTEST,
     linkcheck = "linkcheck" in ARGS,
     linkcheck_ignore = ["https://bugs.kde.org/show_bug.cgi?id=136779"], # fails to load from nanosoldier?
     strict    = true,
