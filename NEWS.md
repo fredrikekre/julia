@@ -4,34 +4,8 @@ Julia v0.7.0 Release Notes
 New language features
 ---------------------
 
-  * Local variables can be tested for being defined
-    using the new `@isdefined variable` macro ([#22281]).
-
-  * Destructuring in function arguments: when an expression such as `(x, y)` is used as
-    a function argument name, the argument is unpacked into local variables `x` and `y`
-    as in the assignment `(x, y) = arg` ([#6614]).
-
   * Named tuples, with the syntax `(a=1, b=2)`. These behave very similarly to tuples,
     except components can also be accessed by name using dot syntax `t.a` ([#22194]).
-
-  * Keyword argument containers (`kw` in `f(; kw...)`) are now named tuples. Dictionary
-    functions like `haskey` and indexing can be used on them, and name-value pairs can be
-    iterated using `pairs(kw)`. `kw` can no longer contain multiple entries for the same
-    argument name ([#4916]).
-
-  * Custom infix operators can now be defined by appending Unicode
-    combining marks, primes, and sub/superscripts to other operators.
-    For example, `+̂ₐ″` is parsed as an infix operator with the same
-    precedence as `+` ([#22089]).
-
-  * The macro call syntax `@macroname[args]` is now available and is parsed
-    as `@macroname([args])` ([#23519]).
-
-  * The construct `if @generated ...; else ...; end` can be used to provide both
-    `@generated` and normal implementations of part of a function. Surrounding code
-    will be common to both versions ([#23168]).
-
-  * Added `⟂` (`\perp`) operator with comparison precedence ([#24404]).
 
   * The `missing` singleton object (of type `Missing`) has been added to represent
     missing values ([#24653]). It propagates through standard operators and mathematical functions,
@@ -41,11 +15,37 @@ New language features
     `Base.getproperty` and `Base.setproperty!` ([#1974]), optionally along with
     a corresponding `Base.propertynames` method for reflection ([#25311]).
 
-  * Values for `Enum`s can now be specified inside of a `begin` block when using the
-    `@enum` macro ([#25424]).
+  * Destructuring in function arguments: when an expression such as `(x, y)` is used as
+    a function argument name, the argument is unpacked into local variables `x` and `y`
+    as in the assignment `(x, y) = arg` ([#6614]).
+
+  * Keyword argument containers (`kw` in `f(; kw...)`) are now named tuples. Dictionary
+    functions like `haskey` and indexing can be used on them, and name-value pairs can be
+    iterated using `pairs(kw)`. `kw` can no longer contain multiple entries for the same
+    argument name ([#4916]).
 
   * Keyword arguments can be required: if a default value is omitted, then an
     exception is thrown if the caller does not assign the keyword a value ([#25830]).
+
+  * The construct `if @generated ...; else ...; end` can be used to provide both
+    `@generated` and normal implementations of part of a function. Surrounding code
+    will be common to both versions ([#23168]).
+
+  * Local variables can be tested for being defined
+    using the new `@isdefined variable` macro ([#22281]).
+
+  * Custom infix operators can now be defined by appending Unicode
+    combining marks, primes, and sub/superscripts to other operators.
+    For example, `+̂ₐ″` is parsed as an infix operator with the same
+    precedence as `+` ([#22089]).
+
+  * The macro call syntax `@macroname[args]` is now available and is parsed
+    as `@macroname([args])` ([#23519]).
+
+  * Added `⟂` (`\perp`) operator with comparison precedence ([#24404]).
+
+  * Values for `Enum`s can now be specified inside of a `begin` block when using the
+    `@enum` macro ([#25424]).
 
 Language changes
 ----------------
