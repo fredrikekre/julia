@@ -119,14 +119,6 @@ Language changes
 
   * `global const` declarations may no longer appear inside functions ([#12010]).
 
-  * Uninitialized `BitArray` constructors of the form `BitArray[{N}](shape...)` have been
-    deprecated in favor of equivalents accepting `undef` (an alias for
-    `UndefInitializer()`) as their first argument, as in
-    `BitArray[{N}](undef, shape...)`. For example, `BitVector(3)` is now
-    `BitVector(undef, 3)`, `BitMatrix((2, 4))` is now
-    `BitMatrix(undef, (2, 4))`, and `BitArray{3}(11, 13, 17)` is now
-    `BitArray{3}(undef, 11, 14, 17)` ([#24785]).
-
   * Dispatch rules have been simplified:
     method matching is now determined exclusively by subtyping;
     the rule that method type parameters must also be captured has been removed.
@@ -765,6 +757,14 @@ Deprecated or removed
     `Vector(3)` is now `Vector(undef, 3)`, `Matrix{Int}((2, 4))` is now,
     `Matrix{Int}(undef, (2, 4))`, and `Array{Float32,3}(11, 13, 17)` is now
     `Array{Float32,3}(undef, 11, 13, 17)` ([#24781]).
+
+  * Uninitialized `BitArray` constructors of the form `BitArray[{N}](shape...)` have been
+    deprecated in favor of equivalents accepting `undef` (an alias for
+    `UndefInitializer()`) as their first argument, as in
+    `BitArray[{N}](undef, shape...)`. For example, `BitVector(3)` is now
+    `BitVector(undef, 3)`, `BitMatrix((2, 4))` is now
+    `BitMatrix(undef, (2, 4))`, and `BitArray{3}(11, 13, 17)` is now
+    `BitArray{3}(undef, 11, 14, 17)` ([#24785]).
 
   * Previously `setindex!(A, x, I...)` (and the syntax `A[I...] = x`) supported two
     different modes of operation when supplied with a set of non-scalar indices `I`
