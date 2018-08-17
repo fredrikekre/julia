@@ -580,7 +580,7 @@ end
     @big_str(str)
 
 Parse a string into a [`BigInt`](@ref) or [`BigFloat`](@ref),
-and throw an `ArgumentError` if the string is not a valid number.
+or throw an `ArgumentError` if the string is not a valid number.
 For integers `_` is allowed in the string as a separator.
 
 # Examples
