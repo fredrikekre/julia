@@ -517,4 +517,13 @@ end
     @test Hermitian(A, :U)[1,1] == Hermitian(A, :L)[1,1] == real(A[1,1])
 end
 
+@testset "issue #29392" begin
+    S = Symmetric(rand(Float64, 2, 2))
+    H = Hermitian(rand(ComplexF64, 2, 2))
+    @test (2.0 * S)::Matrix{Float64} == (S * 2.0)::Matrix{Float64}
+    @test (2.0 * H)::Matrix{ComplexF64} == (H * 2.0)::Matrix{ComplexF64}
+    @test (S / 2.0)::Matrix{Float64} == Matrix(S) / 2.0
+    @test (H / 2.0)::Matrix{ComplexF64} == Matrix(H) / 2.0
+end
+
 end # module TestSymmetric
