@@ -174,6 +174,8 @@ function occursin(r::Regex, s::SubString; offset::Integer=0)
                      r.match_data)
 end
 
+Broadcast.broadcastable(r::Regex) = Ref(r)
+
 """
     match(r::Regex, s::AbstractString[, idx::Integer[, addopts]])
 
