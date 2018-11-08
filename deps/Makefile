@@ -150,6 +150,8 @@ ifneq ($(OS), WINNT)
 DEP_LIBS += libwhich
 endif
 
+DEP_LIBS :=
+
 DEP_LIBS_STAGED := $(filter-out suitesparse suitesparse-wrapper osxunwind,$(DEP_LIBS)) # unlist targets that have not been converted to use the staged-install
 
 
