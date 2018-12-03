@@ -467,6 +467,17 @@ julia> exp(A)
 exp(A::StridedMatrix{<:BlasFloat}) = exp!(copy(A))
 exp(A::StridedMatrix{<:Union{Integer,Complex{<:Integer}}}) = exp!(float.(A))
 
+"""
+    ^(b::Number, A::AbstractMatrix)
+
+Matrix exponential, equivalent to ``\\exp(\\log(b) A)``.
+
+
+# Examples
+```jldoctest
+julia>
+```
+"""
 Base.:^(b::Number, A::AbstractMatrix) = exp!(log(b)*A)
 # method for ℯ to explicitly elide the log(b) multiplication
 Base.:^(::Irrational{:ℯ}, A::AbstractMatrix) = exp(A)
